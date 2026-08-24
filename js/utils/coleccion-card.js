@@ -12,7 +12,7 @@ export function riegosDePlanta(planta) {
 }
 
 export function idDeColeccion(planta) {
-  return planta.planta_id || planta.id || '';
+  return planta.id || '';
 }
 
 export function entryMarkup(planta) {

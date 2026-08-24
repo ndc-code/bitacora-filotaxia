@@ -45,13 +45,13 @@ test('sin imagen propia, usa la primera de la galería para el preview', () => {
   assert.match(html, /data-imagen="assets\/galeria-1.jpg"/);
 });
 
-test('Eliminar sigue usando planta_id y no el uuid de Bitácora', () => {
+test('Eliminar usa el uuid de la fila, no planta_id (permite ítems repetidos)', () => {
   const html = entryMarkup(
     plantaCard({
       id: '11111111-1111-4111-8111-111111111111',
       planta_id: 'aglaonema::aglaonema commutatum::sombra',
     })
   );
-  assert.match(html, /data-id="aglaonema::aglaonema commutatum::sombra"/);
-  assert.match(html, /href="bitacora.html\?id=11111111-1111-4111-8111-111111111111"/);
+  assert.match(html, /data-id="11111111-1111-4111-8111-111111111111"/);
+  assert.doesNotMatch(html, /data-id="aglaonema/);
 });
