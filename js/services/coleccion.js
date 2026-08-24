@@ -97,15 +97,14 @@ export async function contarColeccion() {
   return items.length;
 }
 
-export async function estaEnColeccion(id) {
-  const items = await leer();
-  return items.some((p) => p.planta_id === id || p.id === id);
-}
-
-export async function agregarAColeccion(planta) {
+export async function agregarAColeccion(planta, terrarioId) {
   const session = await getSession();
   if (!session?.user?.id) {
     return { ok: false, reason: 'not_authenticated' };
+  }
+
+  if (!terrarioId) {
+    return { ok: false, reason: 'invalid' };
   }
 
   const riegos =
@@ -120,6 +119,7 @@ export async function agregarAColeccion(planta) {
 
   const nuevoItem = {
     user_id: session.user.id,
+    terrario_id: terrarioId,
     planta_id: planta.id,
     nombre: planta.nombre,
     especie: planta.especie,
@@ -140,15 +140,8 @@ export async function agregarAColeccion(planta) {
       .from('user_collection')
       .insert([nuevoItem]);
 
-    if (error) {
-      if (error.code === '23505') {
-        // Violación de constraint UNIQUE
-        return { ok: false, reason: 'duplicate' };
-      }
-      throw error;
-    }
+    if (error) throw error;
 
-    // Invalidar cache para que se recargue en la próxima lectura
     coleccionCache = null;
 
     return { ok: true };
@@ -165,44 +158,19 @@ export async function quitarDeColeccion(id) {
   }
 
   try {
-    // El id puede venir como uuid de la fila (`id`) o como id de catálogo
-    // (`planta_id`, tipo "nombre::especie::ubicacion"). No se puede filtrar con
-    // `.or(...)` sobre ambas columnas: comparar `id` (uuid) contra un texto de
-    // catálogo hace fallar la query entera. Traemos las claves y resolvemos acá.
-    const { data: items, error: selectError } = await supabase
+    const { data: borradas, error } = await supabase
       .from('user_collection')
-      .select('id, planta_id')
-      .eq('user_id', session.user.id);
+      .delete()
+      .eq('id', id)
+      .eq('user_id', session.user.id)
+      .select('id');
 
-    if (selectError) throw selectError;
+    if (error) throw error;
 
-    const objetivos = (items || [])
-      .filter((item) => item.planta_id === id || item.id === id)
-      .map((item) => item.id);
-
-    if (objetivos.length === 0) {
+    if (!borradas || borradas.length === 0) {
       return { ok: false, reason: 'missing' };
     }
 
-    // `.select()` devuelve las filas borradas: si RLS bloquea el delete no hay
-    // error, pero tampoco filas, y eso sería un fallo silencioso.
-    const { data: borradas, error: deleteError } = await supabase
-      .from('user_collection')
-      .delete()
-      .eq('user_id', session.user.id)
-      .in('id', objetivos)
-      .select('id');
-
-    if (deleteError) throw deleteError;
-
-    if (!borradas || borradas.length === 0) {
-      console.error(
-        'El delete de user_collection no afectó filas (¿falta una policy RLS de delete?)'
-      );
-      return { ok: false, reason: 'error' };
-    }
-
-    // Invalidar cache
     coleccionCache = null;
 
     return { ok: true };
