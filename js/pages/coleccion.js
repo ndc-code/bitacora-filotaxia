@@ -1,37 +1,95 @@
-import { qs } from '../utils/dom.js';
+import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
 import { listarColeccion, quitarDeColeccion, onColeccionChange } from '../services/coleccion.js';
+import { listarTerrarios, eliminarTerrario } from '../services/terrarios.js';
 import { entryMarkup, idDeColeccion } from '../utils/coleccion-card.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
+import { wireTerrarioModal } from '../utils/terrario-modal.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
 import { iniciarPagina, mostrarErrorDePagina } from '../utils/guard.js';
+
+const TIPO_TITULO = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios Cerrados' };
+
+function crearFilaItem(item) {
+  const entry = document.createElement('div');
+  entry.className = 'catalog-entry';
+  entry.dataset.id = idDeColeccion(item);
+  entry.dataset.nombre = item.nombre || '';
+  entry.innerHTML = entryMarkup(item);
+  return entry;
+}
+
+function crearGrupoTerrario({ terrario, items }) {
+  const section = document.createElement('div');
+  section.className = 'coleccion-terrario-group';
+
+  section.innerHTML = `
+    <div class="coleccion-terrario-header">
+      <span class="coleccion-terrario-nombre">${escapeHtml(terrario.nombre)}</span>
+      <span class="coleccion-terrario-count">(${items.length})</span>
+      <button type="button" class="coleccion-terrario-eliminar-btn" data-terrario-id="${escapeHtml(terrario.id)}">Eliminar terrario</button>
+    </div>
+    <div class="coleccion-terrario-rows"></div>
+  `;
+
+  const rows = qs('.coleccion-terrario-rows', section);
+  for (const item of items) {
+    rows.appendChild(crearFilaItem(item));
+  }
+
+  return section;
+}
+
+function crearSeccionTipo(tipo, grupos) {
+  const section = document.createElement('section');
+  section.className = 'coleccion-tipo-group';
+
+  const titulo = document.createElement('h2');
+  titulo.className = 'coleccion-tipo-titulo';
+  titulo.textContent = TIPO_TITULO[tipo];
+  section.appendChild(titulo);
+
+  if (grupos.length === 0) {
+    const vacio = document.createElement('p');
+    vacio.className = 'coleccion-tipo-vacio';
+    vacio.textContent = `Todavía no creaste ningún terrario ${tipo}.`;
+    section.appendChild(vacio);
+    return section;
+  }
+
+  for (const grupo of grupos) {
+    section.appendChild(crearGrupoTerrario(grupo));
+  }
+
+  return section;
+}
 
 async function render(root) {
   const vacio = qs('#mensaje-vacio');
   if (!root || !vacio) return;
 
-  const plantas = await listarColeccion();
+  const [terrarios, items] = await Promise.all([listarTerrarios(), listarColeccion()]);
   root.innerHTML = '';
 
-  if (plantas.length === 0) {
-    vacio.hidden = false;
-    await syncColeccionNavCount();
-    return;
+  vacio.hidden = terrarios.length > 0;
+
+  const itemsPorTerrario = new Map();
+  for (const item of items) {
+    const lista = itemsPorTerrario.get(item.terrario_id) || [];
+    lista.push(item);
+    itemsPorTerrario.set(item.terrario_id, lista);
   }
 
-  vacio.hidden = true;
-
-  for (const planta of plantas) {
-    const entry = document.createElement('div');
-    entry.className = 'catalog-entry';
-    entry.dataset.id = idDeColeccion(planta);
-    entry.dataset.nombre = planta.nombre || '';
-    entry.innerHTML = entryMarkup(planta);
-    root.appendChild(entry);
+  const porTipo = { abierto: [], cerrado: [] };
+  for (const terrario of terrarios) {
+    porTipo[terrario.tipo]?.push({ terrario, items: itemsPorTerrario.get(terrario.id) || [] });
   }
+
+  root.appendChild(crearSeccionTipo('abierto', porTipo.abierto));
+  root.appendChild(crearSeccionTipo('cerrado', porTipo.cerrado));
 
   mostrarPreviewInicial(root);
   await syncColeccionNavCount();
@@ -119,6 +177,55 @@ function wireEliminar(root) {
   });
 }
 
+function wireEliminarTerrario(root) {
+  if (!root) return;
+
+  root.addEventListener('click', async (event) => {
+    const btn = event.target.closest('.coleccion-terrario-eliminar-btn');
+    if (!btn || !root.contains(btn)) return;
+
+    const terrarioId = btn.dataset.terrarioId;
+    if (!terrarioId) return;
+
+    const grupo = btn.closest('.coleccion-terrario-group');
+    const cantidad = qsa('.catalog-entry', grupo).length;
+    const confirmado = window.confirm(
+      cantidad > 0
+        ? `¿Eliminar este terrario y sus ${cantidad} ítems? No se puede deshacer.`
+        : '¿Eliminar este terrario? No se puede deshacer.'
+    );
+    if (!confirmado) return;
+
+    btn.disabled = true;
+    const result = await eliminarTerrario(terrarioId);
+
+    if (result.ok) {
+      await render(root);
+      return;
+    }
+
+    btn.disabled = false;
+    mostrarErrorDePagina('No pudimos eliminar el terrario. Probá otra vez.');
+  });
+}
+
+function wireNuevoTerrario(root, authModal, terrarioModal) {
+  const btn = qs('#btn-nuevo-terrario');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    const abrir = () => terrarioModal.open({ modo: 'crear', onDone: () => render(root) });
+
+    getSession().then((session) => {
+      if (session) {
+        abrir();
+        return;
+      }
+      authModal.open({ onSuccess: abrir });
+    });
+  });
+}
+
 function toggleSidebar() {
   const sidebar = qs('#catalog-sidebar');
   const toggle = qs('#catalog-menu-toggle');
@@ -157,13 +264,12 @@ function wireSidebarToggle() {
   });
 }
 
-const MENSAJE_SIN_PLANTAS =
-  'Todavía no hay nada en tu colección. Sumá algo desde Index con (Agregar).';
 const MENSAJE_SIN_SESION = 'Iniciá sesión para ver los ítems de tu colección.';
 
 const root = qs('#coleccion-rows');
 const authModal = wireAuthModal();
 const authNav = wireAuthNav({ onLogin: abrirLogin });
+const terrarioModal = wireTerrarioModal();
 
 let coleccionActiva = false;
 
@@ -176,15 +282,12 @@ function abrirLogin() {
   });
 }
 
-/**
- * Listeners que no dependen de la sesión (menú, filtros, borrado). Se montan una
- * sola vez: si alguien inicia sesión sin recargar, `activarColeccion` vuelve a
- * correr pero esto no.
- */
 function montarChrome() {
   wireReloj();
   wireThemeToggle();
   wireEliminar(root);
+  wireEliminarTerrario(root);
+  wireNuevoTerrario(root, authModal, terrarioModal);
   wireSidebarToggle();
   wirePreview(root);
 }
@@ -200,27 +303,20 @@ function mostrarEstadoSinSesion() {
 }
 
 function activarColeccion() {
-  const vacio = qs('#mensaje-vacio');
-  if (vacio) vacio.textContent = MENSAJE_SIN_PLANTAS;
-
   render(root);
   syncColeccionNavCount();
 
   if (coleccionActiva) return;
   coleccionActiva = true;
 
-  // Escuchar cambios en tiempo real
   const unsubscribe = onColeccionChange(() => {
     render(root).catch(console.error);
   });
 
-  // Limpiar suscripción si el usuario se va de la página
   window.addEventListener('beforeunload', unsubscribe, { once: true });
 }
 
 iniciarPagina(async function init() {
-  // La página se muestra siempre: sin sesión queda vacía con el botón de
-  // "Iniciar sesión" del header/sidebar, en vez de expulsar a index.html.
   qs('#coleccion-contenido').hidden = false;
   montarChrome();
   await authNav.sync();
