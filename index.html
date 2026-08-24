@@ -3652,6 +3652,33 @@
     </p>
   </dialog>
 
+  <dialog id="dialog-terrario" class="modal">
+    <button type="button" class="modal-close" aria-label="Cerrar">&times;</button>
+    <p class="field-error" id="error-terrario" hidden></p>
+    <h2 id="titulo-terrario">Elegí un terrario</h2>
+
+    <div id="terrario-lista-wrap">
+      <div class="terrario-lista" id="terrario-lista"></div>
+    </div>
+
+    <button type="button" class="btn-secondary btn" id="btn-mostrar-nuevo-terrario">+ Nuevo terrario</button>
+
+    <form id="form-nuevo-terrario" hidden>
+      <div class="field">
+        <label for="terrario-nombre">Nombre</label>
+        <input class="input" type="text" id="terrario-nombre" placeholder="TR-01" required />
+      </div>
+      <div class="field">
+        <label for="terrario-tipo">Tipo</label>
+        <select class="input" id="terrario-tipo">
+          <option value="abierto">Abierto</option>
+          <option value="cerrado">Cerrado</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit" id="btn-crear-terrario">Crear terrario</button>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/gsap.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/ScrollTrigger.min.js" defer></script>
