@@ -1,10 +1,5 @@
 import { qs, qsa } from '../utils/dom.js';
-import {
-  agregarAColeccion,
-  estaEnColeccion,
-  idDesdePlanta,
-  quitarDeColeccion,
-} from '../services/coleccion.js';
+import { agregarAColeccion, idDesdePlanta } from '../services/coleccion.js';
 import { getSession } from '../services/auth.js';
 import { esDesktopConHover, wireCatalogAccordion } from '../utils/catalog-accordion.js';
 import { wireCatalogFilters, wireFiltersToggle } from '../utils/catalog-filters.js';
@@ -15,6 +10,7 @@ import { refreshCatalogFilters } from '../utils/catalog-filters.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
+import { wireTerrarioModal } from '../utils/terrario-modal.js';
 
 function parseGaleria(raw) {
   if (!raw) return [];
@@ -56,79 +52,22 @@ function plantaDesdeBoton(btn) {
   };
 }
 
-function etiquetaDisponible(btn) {
-  return btn.classList.contains('catalog-add--tile') ||
-    btn.classList.contains('catalog-add--spotlight')
-    ? '(+)'
-    : '(Agregar)';
-}
-
-function etiquetaAgregado(btn) {
-  return btn.classList.contains('catalog-add--tile') ||
-    btn.classList.contains('catalog-add--spotlight')
-    ? '(-)'
-    : '(Eliminar)';
-}
-
-function marcarDisponible(btn) {
-  btn.classList.remove('is-added');
-  btn.textContent = etiquetaDisponible(btn);
-  btn.setAttribute('aria-label', 'Agregar a Colección');
-  btn.title = 'Agregar a Colección';
-}
-
-function marcarAgregado(btn) {
-  btn.classList.add('is-added');
-  btn.textContent = etiquetaAgregado(btn);
-  btn.setAttribute('aria-label', 'Eliminar de Colección');
-  btn.title = 'Eliminar de Colección';
-}
-
-function syncFilaColeccion(id, added) {
-  qsa(`.catalog-add[data-id="${CSS.escape(id)}"]`).forEach((btn) => {
-    if (added) marcarAgregado(btn);
-    else marcarDisponible(btn);
-    btn.closest('.catalog-entry')?.classList.toggle('is-in-coleccion', added);
-  });
-}
-
-async function syncBotones() {
-  const entries = qsa('.catalog-entry');
-  for (const entry of entries) {
-    const btn = entry.querySelector('.catalog-add[data-id]');
-    if (!btn) continue;
-    const added = await estaEnColeccion(btn.dataset.id);
-    qsa('.catalog-add[data-id]', entry).forEach((b) => {
-      if (added) marcarAgregado(b);
-      else marcarDisponible(b);
-    });
-    entry.classList.toggle('is-in-coleccion', added);
-  }
-}
-
-async function toggleColeccion(btn) {
+async function agregarDesdeBoton(btn, terrarioModal) {
   const planta = plantaDesdeBoton(btn);
   if (!planta.id) {
     planta.id = idDesdePlanta(planta);
   }
 
-  if (btn.classList.contains('is-added')) {
-    const result = await quitarDeColeccion(planta.id);
-    if (result.ok || result.reason === 'missing') {
-      syncFilaColeccion(planta.id, false);
+  terrarioModal.open({
+    modo: 'elegir',
+    onDone: async (terrarioId) => {
+      await agregarAColeccion(planta, terrarioId);
       await syncColeccionNavCount();
-    }
-    return;
-  }
-
-  const result = await agregarAColeccion(planta);
-  if (result.ok || result.reason === 'duplicate') {
-    syncFilaColeccion(planta.id, true);
-    await syncColeccionNavCount();
-  }
+    },
+  });
 }
 
-function wireAdd(root, authModal) {
+function wireAdd(root, authModal, terrarioModal) {
   if (!root) return;
 
   root.addEventListener('click', (event) => {
@@ -140,10 +79,10 @@ function wireAdd(root, authModal) {
 
     getSession().then((session) => {
       if (session) {
-        toggleColeccion(btn);
+        agregarDesdeBoton(btn, terrarioModal);
         return;
       }
-      authModal.open({ onSuccess: () => toggleColeccion(btn) });
+      authModal.open({ onSuccess: () => agregarDesdeBoton(btn, terrarioModal) });
     });
   });
 }
@@ -153,7 +92,7 @@ function wireAdd(root, authModal) {
  * que queda libre para agregar/quitar de la colección. En mobile el click
  * sigue siendo el que abre el panel de detalle, así que ahí no se toca.
  */
-function wireEntryClickToAdd(root, authModal) {
+function wireEntryClickToAdd(root, authModal, terrarioModal) {
   if (!root) return;
 
   root.addEventListener('click', (event) => {
@@ -171,18 +110,12 @@ function wireEntryClickToAdd(root, authModal) {
 
     getSession().then((session) => {
       if (session) {
-        toggleColeccion(btn);
+        agregarDesdeBoton(btn, terrarioModal);
         return;
       }
-      authModal.open({ onSuccess: () => toggleColeccion(btn) });
+      authModal.open({ onSuccess: () => agregarDesdeBoton(btn, terrarioModal) });
     });
   });
-}
-
-async function onGallery3DSeleccion(btn) {
-  const added = await estaEnColeccion(btn.dataset.id);
-  if (added) marcarAgregado(btn);
-  else marcarDisponible(btn);
 }
 
 /**
@@ -249,11 +182,12 @@ function wireSidebarToggle() {
 const root = qs('#catalog-rows');
 const catalogList = qs('.catalog-list');
 const authModal = wireAuthModal();
+const terrarioModal = wireTerrarioModal();
 wireReloj();
 wireThemeToggle();
 wireCatalogAccordion(root);
-wireAdd(catalogList, authModal);
-wireEntryClickToAdd(catalogList, authModal);
+wireAdd(catalogList, authModal, terrarioModal);
+wireEntryClickToAdd(catalogList, authModal, terrarioModal);
 wireGatedNavLink('#nav-coleccion', authModal);
 wireGatedNavLink('#sidebar-nav-coleccion', authModal, { closeSidebarFirst: true });
 wireGatedNavLink('#nav-riegos', authModal);
@@ -261,9 +195,8 @@ wireGatedNavLink('#sidebar-nav-riegos', authModal, { closeSidebarFirst: true });
 wireCatalogFilters(root);
 wireFiltersToggle();
 wireSidebarToggle();
-wireCatalogView({ onGallery3DSeleccion });
+wireCatalogView({});
 wireRiegoEstacion(root, {
   onChange: () => refreshCatalogFilters(root),
 });
-syncBotones().catch(console.error);
 syncColeccionNavCount().catch(console.error);
