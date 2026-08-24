@@ -6,15 +6,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PLANTAS_PATH = path.join(__dirname, '..', 'index.html');
 
 /**
- * Catálogo de Filotaxia: Haworthias (suculentas de colección), plantas para
- * terrarios abiertos y cerrados, musgos y colémbolos (cultivos de limpieza
- * bioactivos). Los campos se reutilizan del catálogo de jardinería original:
- * "Luz" en la escala Alta/Media/Baja, "Suelo" aproximado al sustrato real más
- * cercano dentro del vocabulario existente (Arenoso = mezcla mineral de
- * drenaje rápido, Franco = sustrato orgánico general, Arcilloso = sustrato
- * que retiene mucha humedad, como sphagnum o turba compactada), "Riego" como
- * frecuencia de riego o nebulización según el ítem, y "Clima" la franja
- * térmica que tolera. El campo "Sol" se deriva de la luz.
+ * Catálogo de Filotaxia: Haworthias y suculentas de terrario abierto,
+ * plantas tropicales de terrario cerrado, musgos, colémbolos (cultivos de
+ * limpieza bioactivos) y materiales de sustrato (piedras, rocas). Los campos
+ * se reutilizan del catálogo de jardinería original: "Luz" en la escala
+ * Alta/Media/Baja, "Suelo" aproximado al sustrato real más cercano dentro del
+ * vocabulario existente (Arenoso = mezcla mineral de drenaje rápido, Franco =
+ * sustrato orgánico general, Arcilloso = sustrato que retiene mucha humedad,
+ * como sphagnum o turba compactada), "Riego" como frecuencia de riego o
+ * nebulización según el ítem, y "Clima" la franja térmica que tolera. El
+ * campo "Sol" se deriva de la luz. Los materiales inertes (Piedras, Rocas)
+ * usan "—" en todos estos campos: no aplican.
  */
 const CATEGORIES = [
   {
@@ -36,11 +38,6 @@ const CATEGORIES = [
       ['Haworthia maughanii', 'Haworthia maughanii', 'Alta', 'Arenoso', 'Exigente', 'Cada 21 días', 'Cálido'],
       ['Haworthia pictada', 'Haworthia picta', 'Media', 'Arenoso', 'Medio', 'Cada 21 días', 'Templado'],
       ['Haworthia magnífica', 'Haworthia magnifica', 'Media', 'Arenoso', 'Medio', 'Cada 21 días', 'Templado'],
-    ],
-  },
-  {
-    label: 'Terrarios Abiertos',
-    plants: [
       ['Echeveria', 'Echeveria elegans', 'Alta', 'Arenoso', 'Fácil', 'Cada 14 días', 'Templado'],
       ['Sedum burrito', 'Sedum burrito', 'Alta', 'Arenoso', 'Fácil', 'Cada 14 días', 'Templado'],
       ['Crasula ovata', 'Crassula ovata', 'Alta', 'Arenoso', 'Fácil', 'Cada 21 días', 'Templado'],
@@ -56,7 +53,7 @@ const CATEGORIES = [
     ],
   },
   {
-    label: 'Terrarios Cerrados',
+    label: 'Plantas tropicales',
     plants: [
       ['Fitonia', 'Fittonia albivenis', 'Baja', 'Franco', 'Medio', 'Cada 5 días', 'Cálido'],
       ['Pilea', 'Pilea depressa', 'Media', 'Franco', 'Fácil', 'Cada 7 días', 'Templado'],
@@ -96,6 +93,26 @@ const CATEGORIES = [
       ['Colémbolo de jardín', 'Entomobrya sp.', 'Media', 'Franco', 'Fácil', 'Cada 10 días', 'Templado'],
     ],
   },
+  {
+    label: 'Piedras',
+    plants: [
+      ['Pómez', 'Piedra pómez volcánica', '—', '—', '—', '—', '—'],
+      ['Cuarzo', 'Piedra de cuarzo blanco', '—', '—', '—', '—', '—'],
+      ['Canto rodado', 'Piedra de río pulida', '—', '—', '—', '—', '—'],
+      ['Laterita', 'Piedra laterita porosa', '—', '—', '—', '—', '—'],
+      ['Gravilla', 'Piedra decorativa fina', '—', '—', '—', '—', '—'],
+    ],
+  },
+  {
+    label: 'Rocas',
+    plants: [
+      ['Roca volcánica', 'Roca ígnea porosa', '—', '—', '—', '—', '—'],
+      ['Lava roja', 'Roca volcánica oxidada', '—', '—', '—', '—', '—'],
+      ['Arenisca', 'Roca sedimentaria', '—', '—', '—', '—', '—'],
+      ['Pizarra', 'Roca metamórfica laminar', '—', '—', '—', '—', '—'],
+      ['Basalto', 'Roca ígnea basáltica', '—', '—', '—', '—', '—'],
+    ],
+  },
 ];
 
 const RIEGOS = ['Cada 5 días', 'Cada 7 días', 'Cada 10 días', 'Cada 14 días', 'Cada 21 días', 'Cada 30 días'];
@@ -106,6 +123,9 @@ function imagenParaSlug(slug) {
 }
 
 function riegosEstacionales(riegoBase) {
+  if (riegoBase === '—') {
+    return { verano: '—', primavera: '—', otoño: '—', invierno: '—' };
+  }
   const idx = RIEGOS.indexOf(riegoBase);
   const clamp = (i) => RIEGOS[Math.max(0, Math.min(RIEGOS.length - 1, i))];
   return {
@@ -117,6 +137,7 @@ function riegosEstacionales(riegoBase) {
 }
 
 function solParaLuz(luz) {
+  if (luz === '—') return '—';
   if (luz === 'Alta' || luz === 'Directa') return 'Sol';
   if (luz === 'Baja' || luz === 'Sombra') return 'Sombra';
   return 'Media sombra';
