@@ -108,13 +108,13 @@ function wireEliminar(root) {
       mostrarErrorDePagina(
         result.reason === 'not_authenticated'
           ? 'Iniciá sesión de nuevo para editar tu colección.'
-          : 'No pudimos eliminar la planta de tu colección. Probá otra vez.'
+          : 'No pudimos eliminar el ítem de tu colección. Probá otra vez.'
       );
     } catch (error) {
       console.error('Error eliminando de la colección', error);
       btn.disabled = false;
       btn.textContent = textoOriginal;
-      mostrarErrorDePagina('No pudimos eliminar la planta de tu colección. Probá otra vez.');
+      mostrarErrorDePagina('No pudimos eliminar el ítem de tu colección. Probá otra vez.');
     }
   });
 }
@@ -158,8 +158,8 @@ function wireSidebarToggle() {
 }
 
 const MENSAJE_SIN_PLANTAS =
-  'Todavía no hay plantas en tu colección. Sumá algunas desde Index con (Agregar).';
-const MENSAJE_SIN_SESION = 'Iniciá sesión para ver las plantas de tu colección.';
+  'Todavía no hay nada en tu colección. Sumá algo desde Index con (Agregar).';
+const MENSAJE_SIN_SESION = 'Iniciá sesión para ver los ítems de tu colección.';
 
 const root = qs('#coleccion-rows');
 const authModal = wireAuthModal();

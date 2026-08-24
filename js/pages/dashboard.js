@@ -31,7 +31,7 @@ async function renderPlantas() {
   try {
     estados = await calcularEstadosDePlantas(plantas);
   } catch (err) {
-    console.error('No se pudieron calcular los estados de las plantas', err);
+    console.error('No se pudieron calcular los estados de los ítems', err);
   }
 
   // Una foto rota no puede tumbar el resto de la grilla.

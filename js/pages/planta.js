@@ -102,7 +102,7 @@ function wireEliminarPlanta(plantaId) {
   qs('#btn-eliminar-planta').addEventListener('click', async () => {
     clearError(errorEl);
     // Confirmación de una acción destructiva, no un mensaje de error.
-    if (!window.confirm('¿Eliminar esta planta? Esta acción no se puede deshacer.')) return;
+    if (!window.confirm('¿Eliminar este ítem? Esta acción no se puede deshacer.')) return;
 
     try {
       await eliminarPlanta(plantaId);
@@ -210,9 +210,9 @@ iniciarPagina(async function init() {
   try {
     planta = await obtenerPlanta(plantaId);
   } catch (err) {
-    console.error('No se pudo cargar la planta', err);
+    console.error('No se pudo cargar el ítem', err);
     qs('#contenido-planta').hidden = true;
-    mostrarErrorDePagina('No encontramos esa planta.', { href: 'dashboard.html', texto: 'Volver a mis plantas' });
+    mostrarErrorDePagina('No encontramos ese ítem.', { href: 'dashboard.html', texto: 'Volver a mi colección' });
     return;
   }
 

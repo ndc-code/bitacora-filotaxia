@@ -93,7 +93,7 @@ async function renderGaleriaGrid(coleccionId) {
   const fotos = await listarFotosColeccion(coleccionId);
 
   if (!fotos.length) {
-    grid.innerHTML = '<p class="bitacora-galeria-vacio">Todavía no subiste fotos de esta planta.</p>';
+    grid.innerHTML = '<p class="bitacora-galeria-vacio">Todavía no subiste fotos de este ítem.</p>';
     return;
   }
 
@@ -255,7 +255,7 @@ function renderCalendario() {
       ${DIAS_SEMANA.map((d) => `<span class="bitacora-calendario-dia-nombre">${d}</span>`).join('')}
     </div>
     <div class="bitacora-calendario-grid">${celdas.join('')}</div>
-    ${frecuenciaDias ? '' : '<p class="bitacora-calendario-vacio">Configurá la frecuencia de riego de esta planta para ver las próximas fechas.</p>'}
+    ${frecuenciaDias ? '' : '<p class="bitacora-calendario-vacio">Configurá la frecuencia de riego de este ítem para ver las próximas fechas.</p>'}
   `;
 }
 
@@ -401,7 +401,7 @@ async function pintarBitacora(planta) {
   renderFoto(planta);
   qs('#bitacora-nombre').textContent = planta.nombre || '';
   qs('#bitacora-especie').textContent = descripcionDe(planta);
-  document.title = `${planta.nombre || 'Bitácora'} — Bitácora de Plantas`;
+  document.title = `${planta.nombre || 'Bitácora'} — Filotaxia`;
   renderDetalle(planta);
   renderNotas(eventos);
   actualizarCalendario(planta, eventos);
@@ -430,7 +430,7 @@ function wireTipoCuidado() {
   const actualizar = () => {
     const esObservacion = select.value === 'observacion';
     label.textContent = esObservacion ? 'Qué observaste' : 'Notas';
-    input.placeholder = esObservacion ? 'Contá qué notaste en la planta' : 'Opcional';
+    input.placeholder = esObservacion ? 'Contá qué notaste en el ítem' : 'Opcional';
   };
 
   select.addEventListener('change', actualizar);
@@ -452,7 +452,7 @@ function wireFormCuidado(planta) {
     const notas = qs('#notas-cuidado').value || null;
 
     if (tipo === 'observacion' && !notas) {
-      showError(errorEl, 'Contá qué observaste en la planta.');
+      showError(errorEl, 'Contá qué observaste en el ítem.');
       qs('#notas-cuidado').focus();
       return;
     }
@@ -503,9 +503,9 @@ async function cargarPlanta() {
   try {
     planta = await obtenerItemColeccion(coleccionId);
   } catch (err) {
-    console.error('No se pudo cargar la planta', err);
+    console.error('No se pudo cargar el ítem', err);
     mostrarSolo('error-pagina');
-    mostrarErrorDePagina('No pudimos cargar esta planta. Probá otra vez.');
+    mostrarErrorDePagina('No pudimos cargar este ítem. Probá otra vez.');
     return null;
   }
 
@@ -519,7 +519,7 @@ async function cargarPlanta() {
   } catch (err) {
     console.error('No se pudo cargar la bitácora', err);
     mostrarSolo('error-pagina');
-    mostrarErrorDePagina('No pudimos cargar esta planta. Probá otra vez.');
+    mostrarErrorDePagina('No pudimos cargar este ítem. Probá otra vez.');
     return null;
   }
 
