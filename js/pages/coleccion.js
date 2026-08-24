@@ -1,6 +1,6 @@
 import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
-import { listarColeccion, quitarDeColeccion, onColeccionChange } from '../services/coleccion.js';
+import { listarColeccion, quitarDeColeccion, onColeccionChange, limpiarCacheColeccion } from '../services/coleccion.js';
 import { listarTerrarios, eliminarTerrario } from '../services/terrarios.js';
 import { entryMarkup, idDeColeccion } from '../utils/coleccion-card.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
@@ -74,6 +74,7 @@ async function render(root) {
   const [terrarios, items] = await Promise.all([listarTerrarios(), listarColeccion()]);
   root.innerHTML = '';
 
+  vacio.textContent = MENSAJE_SIN_TERRARIOS;
   vacio.hidden = terrarios.length > 0;
 
   const itemsPorTerrario = new Map();
@@ -200,6 +201,7 @@ function wireEliminarTerrario(root) {
     const result = await eliminarTerrario(terrarioId);
 
     if (result.ok) {
+      limpiarCacheColeccion();
       await render(root);
       return;
     }
@@ -221,7 +223,13 @@ function wireNuevoTerrario(root, authModal, terrarioModal) {
         abrir();
         return;
       }
-      authModal.open({ onSuccess: abrir });
+      authModal.open({
+        onSuccess: async () => {
+          await authNav.sync();
+          activarColeccion();
+          abrir();
+        },
+      });
     });
   });
 }
@@ -265,6 +273,8 @@ function wireSidebarToggle() {
 }
 
 const MENSAJE_SIN_SESION = 'Iniciá sesión para ver los ítems de tu colección.';
+const MENSAJE_SIN_TERRARIOS =
+  'Todavía no creaste ningún terrario. Agregá uno con "+ Nuevo terrario" o sumá algo desde Index.';
 
 const root = qs('#coleccion-rows');
 const authModal = wireAuthModal();

@@ -112,6 +112,7 @@ export function wireTerrarioModal() {
 
   return {
     async open({ modo = 'elegir', onDone: onDoneCallback } = {}) {
+      if (dialog.open) return;
       onDone = onDoneCallback ?? null;
       resetDialog();
 

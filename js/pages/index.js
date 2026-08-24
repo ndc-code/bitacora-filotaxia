@@ -1,6 +1,7 @@
-import { qs, qsa } from '../utils/dom.js';
+import { qs } from '../utils/dom.js';
 import { agregarAColeccion, idDesdePlanta } from '../services/coleccion.js';
 import { getSession } from '../services/auth.js';
+import { mostrarErrorDePagina } from '../utils/guard.js';
 import { esDesktopConHover, wireCatalogAccordion } from '../utils/catalog-accordion.js';
 import { wireCatalogFilters, wireFiltersToggle } from '../utils/catalog-filters.js';
 import { wireCatalogView } from '../utils/catalog-view.js';
@@ -61,7 +62,11 @@ async function agregarDesdeBoton(btn, terrarioModal) {
   terrarioModal.open({
     modo: 'elegir',
     onDone: async (terrarioId) => {
-      await agregarAColeccion(planta, terrarioId);
+      const result = await agregarAColeccion(planta, terrarioId);
+      if (!result.ok) {
+        mostrarErrorDePagina('No pudimos agregar el ítem al terrario. Probá otra vez.');
+        return;
+      }
       await syncColeccionNavCount();
     },
   });
