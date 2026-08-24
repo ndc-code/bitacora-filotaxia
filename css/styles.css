@@ -2839,3 +2839,80 @@ body.sidebar-open::before {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.coleccion-tipo-group {
+  margin-top: 60px;
+}
+
+.coleccion-tipo-group:first-child {
+  margin-top: 0;
+}
+
+.coleccion-tipo-titulo {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: clamp(40px, 6vw, 64px);
+  letter-spacing: -3px;
+  margin: 0 0 var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-ink);
+  color: var(--color-ink);
+}
+
+.coleccion-tipo-vacio {
+  color: var(--color-gray-mid);
+  font-size: 14px;
+  margin: 0 0 var(--space-8);
+}
+
+.coleccion-terrario-group {
+  margin: 0 0 var(--space-8);
+}
+
+.coleccion-terrario-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.coleccion-terrario-nombre {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--color-ink);
+}
+
+.coleccion-terrario-count {
+  font-size: 14px;
+  color: var(--color-gray-mid);
+}
+
+.coleccion-terrario-eliminar-btn {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--color-gray-mid);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.coleccion-terrario-eliminar-btn:hover {
+  color: var(--color-terracotta);
+}
+
+.coleccion-terrario-rows {
+  border-top: 1px solid var(--color-border);
+}
+
+#btn-nuevo-terrario {
+  margin-top: 70px;
+}
+
+.catalog-page--coleccion #btn-nuevo-terrario ~ #coleccion-rows .coleccion-tipo-group:first-child {
+  margin-top: var(--space-8);
+}
