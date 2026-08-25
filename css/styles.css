@@ -2795,15 +2795,6 @@ body.sidebar-open::before {
   margin: 0 0 var(--space-8);
 }
 
-#btn-nuevo-terrario {
-  margin: 0 0 var(--space-6);
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  font-size: 20px;
-  line-height: 1;
-}
-
 /* Grid de imágenes por terrario: cada .coleccion-terrario-tiles es una
    etiqueta + sus tiles, y todos los grupos de la sección fluyen juntos en
    el mismo grid (estilo portfolio), en vez de listas apiladas. */

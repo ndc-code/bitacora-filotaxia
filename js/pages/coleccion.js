@@ -5,7 +5,6 @@ import { listarTerrarios } from '../services/terrarios.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
-import { wireTerrarioModal } from '../utils/terrario-modal.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
 import { iniciarPagina } from '../utils/guard.js';
@@ -134,29 +133,6 @@ function wireHoverAislado(root) {
   });
 }
 
-function wireNuevoTerrario(root, authModal, terrarioModal) {
-  const btn = qs('#btn-nuevo-terrario');
-  if (!btn) return;
-
-  btn.addEventListener('click', () => {
-    const abrir = () => terrarioModal.open({ modo: 'crear', onDone: () => render(root) });
-
-    getSession().then((session) => {
-      if (session) {
-        abrir();
-        return;
-      }
-      authModal.open({
-        onSuccess: async () => {
-          await authNav.sync();
-          activarColeccion();
-          abrir();
-        },
-      });
-    });
-  });
-}
-
 function toggleSidebar() {
   const sidebar = qs('#catalog-sidebar');
   const toggle = qs('#catalog-menu-toggle');
@@ -197,12 +173,11 @@ function wireSidebarToggle() {
 
 const MENSAJE_SIN_SESION = 'Iniciá sesión para ver los ítems de tu colección.';
 const MENSAJE_SIN_TERRARIOS =
-  'Todavía no creaste ningún terrario. Agregá uno con el botón "+" o sumá algo desde Index.';
+  'Todavía no creaste ningún terrario. Sumá algo desde Index para crear el primero.';
 
 const root = qs('#coleccion-rows');
 const authModal = wireAuthModal();
 const authNav = wireAuthNav({ onLogin: abrirLogin });
-const terrarioModal = wireTerrarioModal();
 
 let coleccionActiva = false;
 
@@ -218,7 +193,6 @@ function abrirLogin() {
 function montarChrome() {
   wireReloj();
   wireThemeToggle();
-  wireNuevoTerrario(root, authModal, terrarioModal);
   wireSidebarToggle();
   wireHoverAislado(root);
 }
