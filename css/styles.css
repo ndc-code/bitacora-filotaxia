@@ -2865,52 +2865,39 @@ body.sidebar-open::before {
   margin: 0 0 var(--space-8);
 }
 
+/* Altura fija por bloque: no van a haber tantos terrarios, así que un
+   handful de filas entra sin scroll y el resto se contiene acá adentro
+   en vez de estirar la página. */
+.coleccion-tipo-lista {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
 .coleccion-terrario-group {
-  margin: 0 0 var(--space-8);
+  margin: 0 0 var(--space-6);
 }
 
-.coleccion-terrario-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-}
-
-.coleccion-terrario-nombre {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  font-size: 24px;
-  color: var(--color-ink);
-}
-
-.coleccion-terrario-count {
-  font-size: 14px;
-  color: var(--color-gray-mid);
-}
-
-.coleccion-terrario-eliminar-btn {
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--color-gray-mid);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.coleccion-terrario-eliminar-btn:hover {
-  color: var(--color-terracotta);
-}
-
+/* Los ítems de un terrario reusan el mismo tratamiento de fila gigante +
+   preview al hover que las filas de nivel terrario (misma clase
+   `.coleccion-row-link`), pero achicado e indentado para marcar la
+   jerarquía visual. */
 .coleccion-terrario-rows {
-  border-top: 1px solid var(--color-border);
+  padding-left: var(--space-6);
+  border-left: 1px solid var(--color-border);
+  margin: 0 0 var(--space-4);
+}
+
+.coleccion-terrario-rows .coleccion-row-text {
+  font-size: clamp(22px, 3.5vw, 40px);
 }
 
 #btn-nuevo-terrario {
   margin-top: 70px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
 }
 
 .catalog-page--coleccion #btn-nuevo-terrario ~ #coleccion-rows .coleccion-tipo-group:first-child {

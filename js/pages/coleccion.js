@@ -22,15 +22,34 @@ function crearFilaItem(item) {
   return entry;
 }
 
+function imagenDeGrupo(items) {
+  for (const item of items) {
+    const galeria = Array.isArray(item.galeria) ? item.galeria : [];
+    const imagen = item.imagen || galeria[0];
+    if (imagen) return imagen;
+  }
+  return '';
+}
+
 function crearGrupoTerrario({ terrario, items }) {
   const section = document.createElement('div');
   section.className = 'coleccion-terrario-group';
+  const nombre = escapeHtml(terrario.nombre);
 
   section.innerHTML = `
-    <div class="coleccion-terrario-header">
-      <span class="coleccion-terrario-nombre">${escapeHtml(terrario.nombre)}</span>
-      <span class="coleccion-terrario-count">(${items.length})</span>
-      <button type="button" class="coleccion-terrario-eliminar-btn" data-terrario-id="${escapeHtml(terrario.id)}">Eliminar terrario</button>
+    <div class="coleccion-row">
+      <div class="coleccion-row-link" data-imagen="${escapeHtml(imagenDeGrupo(items))}">
+        <span class="coleccion-row-title">
+          <span class="coleccion-row-text">${nombre}</span>
+          <button
+            type="button"
+            class="coleccion-eliminar-btn coleccion-terrario-eliminar-btn"
+            data-terrario-id="${escapeHtml(terrario.id)}"
+            title="Eliminar terrario"
+            aria-label="Eliminar terrario ${nombre}"
+          >Eliminar</button>
+        </span>
+      </div>
     </div>
     <div class="coleccion-terrario-rows"></div>
   `;
@@ -60,9 +79,12 @@ function crearSeccionTipo(tipo, grupos) {
     return section;
   }
 
+  const lista = document.createElement('div');
+  lista.className = 'coleccion-tipo-lista';
   for (const grupo of grupos) {
-    section.appendChild(crearGrupoTerrario(grupo));
+    lista.appendChild(crearGrupoTerrario(grupo));
   }
+  section.appendChild(lista);
 
   return section;
 }
