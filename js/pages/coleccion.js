@@ -242,11 +242,9 @@ function crearCopySplit(tipo) {
       ${info.cuidados.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}
     </ul>
     <p class="coleccion-split-label-texto">(Plantas + usadas)</p>
-    <ul class="coleccion-split-cuidados">
-      ${info.plantasTop.map((p) => `<li>${escapeHtml(p)}</li>`).join('')}
-    </ul>
+    <p class="coleccion-split-descripcion">${info.plantasTop.map((p) => escapeHtml(p)).join(' // ')}</p>
     <p class="coleccion-split-label-texto">(Plantas usadas)</p>
-    <p class="coleccion-split-descripcion">${escapeHtml(info.plantas.join(', '))}</p>
+    <p class="coleccion-split-descripcion">${info.plantas.map((p) => escapeHtml(p)).join(' // ')}</p>
   `;
   return aside;
 }
