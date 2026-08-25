@@ -54,7 +54,10 @@ function crearSeccionTipo(tipo, grupos) {
 
   const titulo = document.createElement('h2');
   titulo.className = 'coleccion-tipo-titulo';
-  titulo.textContent = TIPO_TITULO[tipo];
+  titulo.innerHTML = `
+    <span class="coleccion-tipo-titulo-label">${escapeHtml(TIPO_TITULO[tipo])}</span>
+    <span class="coleccion-tipo-titulo-count">(${grupos.length})</span>
+  `;
   section.appendChild(titulo);
 
   if (grupos.length === 0) {
