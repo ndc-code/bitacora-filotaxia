@@ -2919,6 +2919,7 @@ body.sidebar-open::before {
 }
 
 .coleccion-split-fila-imagen {
+  position: relative;
   flex: 1;
   min-width: 0;
   max-width: 520px;
@@ -2926,6 +2927,25 @@ body.sidebar-open::before {
   background-color: var(--color-border);
   background-size: cover;
   background-position: center;
+}
+
+.coleccion-split-fila-imagen-accion {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.coleccion-split-fila-imagen-accion:hover {
+  border-color: var(--color-ink);
 }
 
 .coleccion-split-fila-nombre {

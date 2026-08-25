@@ -2,7 +2,7 @@ import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
 import { listarColeccion, onColeccionChange } from '../services/coleccion.js';
 import { listarTerrarios } from '../services/terrarios.js';
-import { obtenerFotoPortada } from '../services/terrario-fotos.js';
+import { obtenerFotoPortada, subirPortadaTerrario } from '../services/terrario-fotos.js';
 import { obtenerUrlFoto } from '../services/coleccion-fotos.js';
 import { formatFechaCorta } from '../utils/riego-frecuencia.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
@@ -10,7 +10,7 @@ import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
-import { iniciarPagina } from '../utils/guard.js';
+import { iniciarPagina, mostrarErrorDePagina } from '../utils/guard.js';
 
 const TIPO_TITULO = { abierto: 'Abiertos', cerrado: 'Cerrados' };
 const TIPO_TITULO_SPLIT = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios Cerrados' };
@@ -186,6 +186,14 @@ function crearFilaSplit(terrario, imagenUrl) {
   const imagenDiv = document.createElement('div');
   imagenDiv.className = 'coleccion-split-fila-imagen';
   if (imagenUrl) imagenDiv.style.backgroundImage = `url("${imagenUrl}")`;
+
+  const accionImagen = document.createElement('button');
+  accionImagen.type = 'button';
+  accionImagen.className = 'coleccion-split-fila-imagen-accion';
+  accionImagen.textContent = imagenUrl ? '(Cambiar imagen)' : '(Agregar imagen)';
+  accionImagen.dataset.terrarioId = terrario.id;
+  imagenDiv.appendChild(accionImagen);
+
   fila.appendChild(imagenDiv);
 
   return fila;
@@ -323,6 +331,57 @@ function wireHoverAislado(root) {
   });
 }
 
+function crearInputPortadaOculto() {
+  let input = document.getElementById('input-portada-oculto');
+  if (input) return input;
+
+  input = document.createElement('input');
+  input.type = 'file';
+  input.id = 'input-portada-oculto';
+  input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+  input.hidden = true;
+  document.body.appendChild(input);
+  return input;
+}
+
+/**
+ * El botón "(Agregar/Cambiar imagen)" vive dentro de la fila, que es un link
+ * a la bitácora — hay que frenar esa navegación y abrir el selector de
+ * archivo en su lugar.
+ */
+function wireImagenPortada(root) {
+  if (!root) return;
+
+  const input = crearInputPortadaOculto();
+  let terrarioObjetivo = null;
+
+  root.addEventListener('click', (event) => {
+    const btn = event.target.closest('.coleccion-split-fila-imagen-accion');
+    if (!btn || !root.contains(btn)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    terrarioObjetivo = btn.dataset.terrarioId;
+    input.value = '';
+    input.click();
+  });
+
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    const terrarioId = terrarioObjetivo;
+    terrarioObjetivo = null;
+    if (!file || !terrarioId) return;
+
+    const result = await subirPortadaTerrario(terrarioId, file);
+    if (result.ok) {
+      await render(root);
+    } else {
+      mostrarErrorDePagina('No pudimos subir la imagen. Probá otra vez.');
+    }
+  });
+}
+
 function toggleSidebar() {
   const sidebar = qs('#catalog-sidebar');
   const toggle = qs('#catalog-menu-toggle');
@@ -385,6 +444,7 @@ function montarChrome() {
   wireThemeToggle();
   wireSidebarToggle();
   wireHoverAislado(root);
+  wireImagenPortada(root);
 }
 
 function mostrarEstadoSinSesion() {

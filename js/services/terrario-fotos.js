@@ -15,20 +15,48 @@ export async function listarFotosTerrario(terrarioId) {
   return data || [];
 }
 
-/**
- * La portada de un terrario es su foto más antigua: la primera que se sube
- * queda fija, no cambia si después se agregan más a la galería.
- */
 export async function obtenerFotoPortada(terrarioId) {
   const { data, error } = await supabase
     .from('terrario_fotos')
     .select('*')
     .eq('terrario_id', terrarioId)
-    .order('created_at', { ascending: true })
-    .limit(1)
+    .eq('es_portada', true)
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+async function establecerFotoPortada(terrarioId, fotoId) {
+  const { error: unsetError } = await supabase
+    .from('terrario_fotos')
+    .update({ es_portada: false })
+    .eq('terrario_id', terrarioId)
+    .eq('es_portada', true);
+  if (unsetError) throw unsetError;
+
+  const { error: setError } = await supabase
+    .from('terrario_fotos')
+    .update({ es_portada: true })
+    .eq('id', fotoId);
+  if (setError) throw setError;
+}
+
+/**
+ * Sube una foto y la deja marcada como portada del terrario, reemplazando a
+ * la anterior (si había). A diferencia de `subirFotoTerrario`, esta es la
+ * acción explícita de "(Agregar imagen)" / "(Cambiar imagen)".
+ */
+export async function subirPortadaTerrario(terrarioId, file) {
+  const result = await subirFotoTerrario(terrarioId, file);
+  if (!result.ok) return result;
+
+  try {
+    await establecerFotoPortada(terrarioId, result.foto.id);
+  } catch (error) {
+    return { ok: false, reason: 'error', error };
+  }
+
+  return result;
 }
 
 export async function subirFotoTerrario(terrarioId, file) {
