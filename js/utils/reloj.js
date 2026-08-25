@@ -17,18 +17,26 @@ const formatoFecha = new Intl.DateTimeFormat(LOCALE, {
   timeZone: ZONA,
 });
 
-const formatoHora = new Intl.DateTimeFormat(LOCALE, {
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-  timeZone: ZONA,
-});
+const formatoMes = new Intl.DateTimeFormat('en-US', { month: 'numeric', timeZone: ZONA });
+
+// Estaciones meteorológicas del hemisferio sur, agrupadas por mes calendario
+// (índice 0 = enero ... 11 = diciembre) en vez de por fecha exacta de
+// equinoccio/solsticio — más simple y es como la gente las nombra.
+const ESTACIONES = [
+  'Verano', 'Verano', 'Otoño', 'Otoño', 'Otoño', 'Invierno',
+  'Invierno', 'Invierno', 'Primavera', 'Primavera', 'Primavera', 'Verano',
+];
+
+function estacionDe(date) {
+  const mes = Number(formatoMes.format(date));
+  return ESTACIONES[mes - 1];
+}
 
 /**
- * Devuelve la fecha y hora de Buenos Aires como "13 ago 23:46".
+ * Devuelve la fecha y estación de Buenos Aires como "13 ago Invierno".
  */
-export function formatearFechaHora(date = new Date()) {
-  return `${formatoFecha.format(date)} ${formatoHora.format(date)}`;
+export function formatearFechaEstacion(date = new Date()) {
+  return `${formatoFecha.format(date)} ${estacionDe(date)}`;
 }
 
 /**
@@ -52,7 +60,7 @@ export function wireReloj() {
 
   function pintar() {
     const ahora = new Date();
-    const texto = formatearFechaHora(ahora);
+    const texto = formatearFechaEstacion(ahora);
     elementos.forEach((el) => {
       el.textContent = texto;
       // `datetime` legible por máquinas; el texto visible ya está en hora de
