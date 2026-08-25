@@ -2,6 +2,7 @@ import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
 import { listarColeccion, onColeccionChange } from '../services/coleccion.js';
 import { listarTerrarios } from '../services/terrarios.js';
+import { formatFechaCorta } from '../utils/riego-frecuencia.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
@@ -109,16 +110,26 @@ function crearFilaSplit(terrario, items) {
   fila.className = 'coleccion-split-fila';
   fila.href = `bitacora.html?id=${encodeURIComponent(terrario.id)}`;
 
+  const meta = document.createElement('div');
+  meta.className = 'coleccion-split-fila-meta';
+
+  const fecha = document.createElement('span');
+  fecha.className = 'coleccion-split-fila-fecha';
+  fecha.textContent = formatFechaCorta(terrario.created_at);
+  meta.appendChild(fecha);
+
+  const nombre = document.createElement('span');
+  nombre.className = 'coleccion-split-fila-nombre';
+  nombre.textContent = terrario.nombre;
+  meta.appendChild(nombre);
+
+  fila.appendChild(meta);
+
   const imagenDiv = document.createElement('div');
   imagenDiv.className = 'coleccion-split-fila-imagen';
   const imagen = imagenDeTerrario(items);
   if (imagen) imagenDiv.style.backgroundImage = `url("${imagen}")`;
   fila.appendChild(imagenDiv);
-
-  const nombre = document.createElement('span');
-  nombre.className = 'coleccion-split-fila-nombre';
-  nombre.textContent = terrario.nombre;
-  fila.appendChild(nombre);
 
   return fila;
 }
