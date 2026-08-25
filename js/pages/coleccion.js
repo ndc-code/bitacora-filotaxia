@@ -16,8 +16,7 @@ const TIPO_TITULO_SPLIT = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios C
 const TIPO_INFO = {
   abierto: {
     descripcion: [
-      'Terrarios sin tapa (o con ventilación), pensados para plantas que necesitan aire circulando y no toleran la humedad estancada.',
-      'Como no hay drenaje hacia afuera ni recirculación cerrada del agua, hay que regar con cuidado y esperar a que las plantas absorban toda el agua antes de volver a regar — se riega cada bastante tiempo, no por calendario fijo. Este es el formato para cactus y suculentas, que necesitan que el sustrato se seque bien entre riego y riego.',
+      'Terrarios sin tapa, pensados para plantas que necesitan aire circulando y no toleran la humedad estancada. Como no hay drenaje hacia afuera ni recirculación cerrada del agua, hay que regar con cuidado y esperar a que las plantas absorban toda el agua antes de volver a regar — se riega cada bastante tiempo, no por calendario fijo. Este es el formato para cactus y suculentas, que necesitan que el sustrato se seque bien entre riego y riego.',
     ],
     armado: [
       { capa: 'Capa 4: Grava decorativa', detalle: '300 ml' },
