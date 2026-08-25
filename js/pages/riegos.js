@@ -1,11 +1,9 @@
 import { qs, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
-import { listarColeccion } from '../services/coleccion.js';
-import { listarCuidadosColeccion } from '../services/coleccion-cuidados.js';
-import { riegosDePlanta } from '../utils/coleccion-card.js';
-import { estacionActual, riegoParaEstacion } from '../utils/catalog-riego-estacion.js';
+import { listarTerrarios } from '../services/terrarios.js';
+import { listarCuidadosTerrario } from '../services/terrario-cuidados.js';
 import { calcularProximoVencimiento } from '../utils/recordatorios.js';
-import { diasDeRiego, textoProximoRiego } from '../utils/riego-frecuencia.js';
+import { textoProximoRiego } from '../utils/riego-frecuencia.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
@@ -17,21 +15,20 @@ function ultimoRiegoDe(eventos) {
   return eventos.find((evento) => evento.tipo === 'regar') ?? null;
 }
 
-async function calcularDatosPlanta(planta) {
-  const eventos = await listarCuidadosColeccion(planta.id);
-  const riego = riegoParaEstacion(riegosDePlanta(planta), planta.riego, estacionActual());
-  const frecuenciaDias = diasDeRiego(riego);
+async function calcularDatosTerrario(terrario) {
+  const eventos = await listarCuidadosTerrario(terrario.id);
+  const frecuenciaDias = terrario.riego_frecuencia_dias;
   const ultimo = ultimoRiegoDe(eventos);
   const proxima =
     frecuenciaDias == null
       ? null
       : calcularProximoVencimiento({
           ultimaFecha: ultimo?.fecha ?? null,
-          fechaAlta: planta.created_at,
+          fechaAlta: terrario.created_at,
           frecuenciaDias,
         });
 
-  return { planta, ultimo, proxima };
+  return { terrario, ultimo, proxima };
 }
 
 function filaMarkup(nombre, id, texto) {
@@ -58,22 +55,22 @@ function renderProximos(datos) {
   }
 
   lista.innerHTML = conProxima
-    .map((d) => filaMarkup(d.planta.nombre, d.planta.id, textoProximoRiego(d.proxima)))
+    .map((d) => filaMarkup(d.terrario.nombre, d.terrario.id, textoProximoRiego(d.proxima)))
     .join('');
 }
 
 async function render() {
   const vacio = qs('#mensaje-vacio');
-  const plantas = await listarColeccion();
+  const terrarios = await listarTerrarios();
 
-  if (plantas.length === 0) {
+  if (terrarios.length === 0) {
     vacio.hidden = false;
     qs('#riegos-proximos').innerHTML = '';
     return;
   }
 
   vacio.hidden = true;
-  const datos = await Promise.all(plantas.map(calcularDatosPlanta));
+  const datos = await Promise.all(terrarios.map(calcularDatosTerrario));
   renderProximos(datos);
 }
 
@@ -114,7 +111,7 @@ function wireSidebarToggle() {
   });
 }
 
-const MENSAJE_SIN_SESION = 'Iniciá sesión para ver los riegos de tu colección.';
+const MENSAJE_SIN_SESION = 'Iniciá sesión para ver los riegos de tus terrarios.';
 
 const authModal = wireAuthModal();
 const authNav = wireAuthNav({ onLogin: abrirLogin });
