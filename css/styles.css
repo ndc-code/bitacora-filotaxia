@@ -2929,14 +2929,25 @@ body.sidebar-open::before {
   background-position: center;
 }
 
-.coleccion-split-fila-imagen-accion {
+.coleccion-split-fila-imagen-acciones {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-canvas);
-  border: 1px solid var(--color-border);
+  display: flex;
+  gap: var(--space-4);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.coleccion-split-fila-imagen:hover .coleccion-split-fila-imagen-acciones {
+  opacity: 1;
+}
+
+.coleccion-split-fila-imagen-accion {
+  padding: 0;
+  background: none;
+  border: none;
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: 14px;
@@ -2945,7 +2956,7 @@ body.sidebar-open::before {
 }
 
 .coleccion-split-fila-imagen-accion:hover {
-  border-color: var(--color-ink);
+  text-decoration: underline;
 }
 
 .coleccion-split-fila-nombre {

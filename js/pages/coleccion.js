@@ -2,7 +2,7 @@ import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
 import { listarColeccion, onColeccionChange } from '../services/coleccion.js';
 import { listarTerrarios } from '../services/terrarios.js';
-import { obtenerFotoPortada, subirPortadaTerrario } from '../services/terrario-fotos.js';
+import { obtenerFotoPortada, subirPortadaTerrario, eliminarFotoTerrario } from '../services/terrario-fotos.js';
 import { obtenerUrlFoto } from '../services/coleccion-fotos.js';
 import { formatFechaCorta } from '../utils/riego-frecuencia.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
@@ -96,7 +96,7 @@ async function obtenerImagenesPortada(terrarios) {
     terrarios.map(async (terrario) => {
       try {
         const foto = await obtenerFotoPortada(terrario.id);
-        if (foto) portadas.set(terrario.id, await obtenerUrlFoto(foto.storage_path));
+        if (foto) portadas.set(terrario.id, { foto, url: await obtenerUrlFoto(foto.storage_path) });
       } catch (err) {
         console.error('Error obteniendo la portada del terrario', err);
       }
@@ -110,7 +110,7 @@ async function obtenerImagenesPortada(terrarios) {
  * bitácora — ahí vive el contenido completo del terrario (sus ítems,
  * cuidados, riego, galería).
  */
-function crearTileTerrario(terrario, imagenUrl) {
+function crearTileTerrario(terrario, portada) {
   const tile = document.createElement('a');
   tile.className = 'coleccion-terrario-tile';
   tile.href = `bitacora.html?id=${encodeURIComponent(terrario.id)}`;
@@ -118,7 +118,7 @@ function crearTileTerrario(terrario, imagenUrl) {
 
   const imagenDiv = document.createElement('div');
   imagenDiv.className = 'coleccion-terrario-tile-imagen';
-  if (imagenUrl) imagenDiv.style.backgroundImage = `url("${imagenUrl}")`;
+  if (portada?.url) imagenDiv.style.backgroundImage = `url("${portada.url}")`;
   tile.appendChild(imagenDiv);
 
   const nombre = document.createElement('span');
@@ -163,7 +163,7 @@ function crearSeccionTipo(tipo, grupos, portadas) {
  * Fila de la lista de un tipo específico: una imagen más grande que el tile
  * de la vista combinada, apiladas una debajo de la otra en una sola columna.
  */
-function crearFilaSplit(terrario, imagenUrl) {
+function crearFilaSplit(terrario, portada) {
   const fila = document.createElement('a');
   fila.className = 'coleccion-split-fila';
   fila.href = `bitacora.html?id=${encodeURIComponent(terrario.id)}`;
@@ -185,15 +185,31 @@ function crearFilaSplit(terrario, imagenUrl) {
 
   const imagenDiv = document.createElement('div');
   imagenDiv.className = 'coleccion-split-fila-imagen';
-  if (imagenUrl) imagenDiv.style.backgroundImage = `url("${imagenUrl}")`;
+  if (portada?.url) imagenDiv.style.backgroundImage = `url("${portada.url}")`;
 
-  const accionImagen = document.createElement('button');
-  accionImagen.type = 'button';
-  accionImagen.className = 'coleccion-split-fila-imagen-accion';
-  accionImagen.textContent = imagenUrl ? '(Cambiar imagen)' : '(Agregar imagen)';
-  accionImagen.dataset.terrarioId = terrario.id;
-  imagenDiv.appendChild(accionImagen);
+  const acciones = document.createElement('div');
+  acciones.className = 'coleccion-split-fila-imagen-acciones';
 
+  const accionCargar = document.createElement('button');
+  accionCargar.type = 'button';
+  accionCargar.className = 'coleccion-split-fila-imagen-accion';
+  accionCargar.textContent = portada ? '(Cambiar)' : '(Cargar)';
+  accionCargar.dataset.accion = 'cargar';
+  accionCargar.dataset.terrarioId = terrario.id;
+  acciones.appendChild(accionCargar);
+
+  if (portada) {
+    const accionBorrar = document.createElement('button');
+    accionBorrar.type = 'button';
+    accionBorrar.className = 'coleccion-split-fila-imagen-accion';
+    accionBorrar.textContent = '(Borrar)';
+    accionBorrar.dataset.accion = 'borrar';
+    accionBorrar.dataset.fotoId = portada.foto.id;
+    accionBorrar.dataset.fotoPath = portada.foto.storage_path;
+    acciones.appendChild(accionBorrar);
+  }
+
+  imagenDiv.appendChild(acciones);
   fila.appendChild(imagenDiv);
 
   return fila;
@@ -345,9 +361,9 @@ function crearInputPortadaOculto() {
 }
 
 /**
- * El botón "(Agregar/Cambiar imagen)" vive dentro de la fila, que es un link
- * a la bitácora — hay que frenar esa navegación y abrir el selector de
- * archivo en su lugar.
+ * Los botones "(Cargar/Cambiar)" y "(Borrar)" viven dentro de la fila, que es
+ * un link a la bitácora — hay que frenar esa navegación y manejar la acción
+ * (abrir el selector de archivo, o borrar la portada) en su lugar.
  */
 function wireImagenPortada(root) {
   if (!root) return;
@@ -361,6 +377,23 @@ function wireImagenPortada(root) {
 
     event.preventDefault();
     event.stopPropagation();
+
+    if (btn.dataset.accion === 'borrar') {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      eliminarFotoTerrario({ id: btn.dataset.fotoId, storage_path: btn.dataset.fotoPath })
+        .then((result) => {
+          if (result.ok) return render(root);
+          btn.disabled = false;
+          mostrarErrorDePagina('No pudimos borrar la imagen. Probá otra vez.');
+        })
+        .catch((err) => {
+          console.error('Error borrando la portada', err);
+          btn.disabled = false;
+          mostrarErrorDePagina('No pudimos borrar la imagen. Probá otra vez.');
+        });
+      return;
+    }
 
     terrarioObjetivo = btn.dataset.terrarioId;
     input.value = '';
