@@ -2764,7 +2764,8 @@ body.sidebar-open::before {
 .coleccion-tipo-titulo {
   font-family: var(--font-heading);
   font-weight: 400;
-  font-size: clamp(40px, 6vw, 64px);
+  font-size: 112px;
+  line-height: 1;
   letter-spacing: -3px;
   margin: 0 0 var(--space-4);
   padding-bottom: var(--space-2);
