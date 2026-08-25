@@ -2,6 +2,8 @@ import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
 import { listarColeccion, onColeccionChange } from '../services/coleccion.js';
 import { listarTerrarios } from '../services/terrarios.js';
+import { obtenerFotoPortada } from '../services/terrario-fotos.js';
+import { obtenerUrlFoto } from '../services/coleccion-fotos.js';
 import { formatFechaCorta } from '../utils/riego-frecuencia.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
@@ -83,21 +85,32 @@ const TIPO_INFO = {
   },
 };
 
-function imagenDeTerrario(items) {
-  for (const item of items) {
-    const galeria = Array.isArray(item.galeria) ? item.galeria : [];
-    const imagen = item.imagen || galeria[0];
-    if (imagen) return imagen;
-  }
-  return '';
+/**
+ * La portada de cada terrario es una foto propia (subida en la Galería de su
+ * bitácora), no la imagen de catálogo de una planta — un terrario es un
+ * objeto físico distinto de las especies que tiene adentro.
+ */
+async function obtenerImagenesPortada(terrarios) {
+  const portadas = new Map();
+  await Promise.all(
+    terrarios.map(async (terrario) => {
+      try {
+        const foto = await obtenerFotoPortada(terrario.id);
+        if (foto) portadas.set(terrario.id, await obtenerUrlFoto(foto.storage_path));
+      } catch (err) {
+        console.error('Error obteniendo la portada del terrario', err);
+      }
+    })
+  );
+  return portadas;
 }
 
 /**
- * Un tile por terrario (una sola imagen representativa, la del primer ítem
- * que tenga una), que lleva directo a su bitácora — ahí vive el contenido
- * completo del terrario (sus ítems, cuidados, riego, galería).
+ * Un tile por terrario (su foto de portada), que lleva directo a su
+ * bitácora — ahí vive el contenido completo del terrario (sus ítems,
+ * cuidados, riego, galería).
  */
-function crearTileTerrario(terrario, items) {
+function crearTileTerrario(terrario, imagenUrl) {
   const tile = document.createElement('a');
   tile.className = 'coleccion-terrario-tile';
   tile.href = `bitacora.html?id=${encodeURIComponent(terrario.id)}`;
@@ -105,8 +118,7 @@ function crearTileTerrario(terrario, items) {
 
   const imagenDiv = document.createElement('div');
   imagenDiv.className = 'coleccion-terrario-tile-imagen';
-  const imagen = imagenDeTerrario(items);
-  if (imagen) imagenDiv.style.backgroundImage = `url("${imagen}")`;
+  if (imagenUrl) imagenDiv.style.backgroundImage = `url("${imagenUrl}")`;
   tile.appendChild(imagenDiv);
 
   const nombre = document.createElement('span');
@@ -117,7 +129,7 @@ function crearTileTerrario(terrario, items) {
   return tile;
 }
 
-function crearSeccionTipo(tipo, grupos) {
+function crearSeccionTipo(tipo, grupos, portadas) {
   const section = document.createElement('section');
   section.className = 'coleccion-tipo-group';
 
@@ -139,8 +151,8 @@ function crearSeccionTipo(tipo, grupos) {
 
   const grid = document.createElement('div');
   grid.className = 'coleccion-grid';
-  for (const { terrario, items } of grupos) {
-    grid.appendChild(crearTileTerrario(terrario, items));
+  for (const { terrario } of grupos) {
+    grid.appendChild(crearTileTerrario(terrario, portadas.get(terrario.id)));
   }
   section.appendChild(grid);
 
@@ -151,7 +163,7 @@ function crearSeccionTipo(tipo, grupos) {
  * Fila de la lista de un tipo específico: una imagen más grande que el tile
  * de la vista combinada, apiladas una debajo de la otra en una sola columna.
  */
-function crearFilaSplit(terrario, items) {
+function crearFilaSplit(terrario, imagenUrl) {
   const fila = document.createElement('a');
   fila.className = 'coleccion-split-fila';
   fila.href = `bitacora.html?id=${encodeURIComponent(terrario.id)}`;
@@ -173,8 +185,7 @@ function crearFilaSplit(terrario, items) {
 
   const imagenDiv = document.createElement('div');
   imagenDiv.className = 'coleccion-split-fila-imagen';
-  const imagen = imagenDeTerrario(items);
-  if (imagen) imagenDiv.style.backgroundImage = `url("${imagen}")`;
+  if (imagenUrl) imagenDiv.style.backgroundImage = `url("${imagenUrl}")`;
   fila.appendChild(imagenDiv);
 
   return fila;
@@ -216,7 +227,7 @@ function crearCopySplit(tipo) {
   return aside;
 }
 
-function renderSplit(root, tipo, grupos) {
+function renderSplit(root, tipo, grupos, portadas) {
   const split = document.createElement('div');
   split.className = 'coleccion-split';
 
@@ -229,8 +240,8 @@ function renderSplit(root, tipo, grupos) {
     vacio.textContent = `Todavía no creaste ningún terrario ${tipo}.`;
     lista.appendChild(vacio);
   } else {
-    for (const { terrario, items } of grupos) {
-      lista.appendChild(crearFilaSplit(terrario, items));
+    for (const { terrario } of grupos) {
+      lista.appendChild(crearFilaSplit(terrario, portadas.get(terrario.id)));
     }
   }
 
@@ -251,6 +262,7 @@ async function render(root) {
   if (!root || !vacio) return;
 
   const [terrarios, items] = await Promise.all([listarTerrarios(), listarColeccion()]);
+  const portadas = await obtenerImagenesPortada(terrarios);
   root.innerHTML = '';
 
   const itemsPorTerrario = new Map();
@@ -270,7 +282,7 @@ async function render(root) {
 
   if (tipoParam === 'abierto' || tipoParam === 'cerrado') {
     vacio.hidden = true;
-    renderSplit(root, tipoParam, porTipo[tipoParam]);
+    renderSplit(root, tipoParam, porTipo[tipoParam], portadas);
     await syncColeccionNavCount();
     return;
   }
@@ -278,8 +290,8 @@ async function render(root) {
   vacio.textContent = MENSAJE_SIN_TERRARIOS;
   vacio.hidden = terrarios.length > 0;
 
-  root.appendChild(crearSeccionTipo('abierto', porTipo.abierto));
-  root.appendChild(crearSeccionTipo('cerrado', porTipo.cerrado));
+  root.appendChild(crearSeccionTipo('abierto', porTipo.abierto, portadas));
+  root.appendChild(crearSeccionTipo('cerrado', porTipo.cerrado, portadas));
 
   await syncColeccionNavCount();
 }

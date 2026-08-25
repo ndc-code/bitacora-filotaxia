@@ -13,6 +13,7 @@ import {
   listarFotosTerrario,
   subirFotoTerrario,
   eliminarFotoTerrario,
+  obtenerFotoPortada,
 } from '../services/terrario-fotos.js';
 import { obtenerUrlFoto } from '../services/coleccion-fotos.js';
 import { formatFechaCorta } from '../utils/riego-frecuencia.js';
@@ -82,11 +83,16 @@ function wireSidebarToggle() {
   });
 }
 
-function renderFoto(items) {
-  const primeraImagen = items.find((item) => item.imagen || (Array.isArray(item.galeria) && item.galeria[0]));
-  const imagen = primeraImagen ? (primeraImagen.imagen || primeraImagen.galeria[0]) : '';
-  qs('#bitacora-foto').innerHTML = imagen
-    ? `<img src="${escapeHtml(imagen)}" alt="${escapeHtml(terrarioActual?.nombre || '')}" />`
+async function renderFoto(terrario) {
+  let url = '';
+  try {
+    const portada = await obtenerFotoPortada(terrario.id);
+    if (portada) url = await obtenerUrlFoto(portada.storage_path);
+  } catch (err) {
+    console.error('Error obteniendo la portada del terrario', err);
+  }
+  qs('#bitacora-foto').innerHTML = url
+    ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(terrario.nombre || '')}" />`
     : '';
 }
 
@@ -337,7 +343,7 @@ function wireSubidaFoto(terrario) {
         showError(errorEl, MENSAJES_ERROR_FOTO[result.reason] ?? MENSAJES_ERROR_FOTO.error);
         return;
       }
-      await renderGaleriaGrid(terrario.id);
+      await Promise.all([renderGaleriaGrid(terrario.id), renderFoto(terrario)]);
     } catch (err) {
       console.error('Error subiendo foto', err);
       showError(errorEl, MENSAJES_ERROR_FOTO.error);
@@ -367,7 +373,7 @@ function wireEliminarFoto(terrario) {
         btn.disabled = false;
         return;
       }
-      await renderGaleriaGrid(terrario.id);
+      await Promise.all([renderGaleriaGrid(terrario.id), renderFoto(terrario)]);
     } catch (err) {
       console.error('Error eliminando foto', err);
       btn.disabled = false;
@@ -499,7 +505,7 @@ async function pintarBitacora(terrario) {
     listarColeccion().then((todos) => todos.filter((item) => item.terrario_id === terrario.id)),
   ]);
 
-  renderFoto(items);
+  await renderFoto(terrario);
   qs('#bitacora-nombre').textContent = terrario.nombre || '';
   qs('#bitacora-especie').textContent = descripcionDe(terrario, items.length);
   document.title = `${terrario.nombre || 'Bitácora'} — Filotaxia`;

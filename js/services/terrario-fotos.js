@@ -15,6 +15,22 @@ export async function listarFotosTerrario(terrarioId) {
   return data || [];
 }
 
+/**
+ * La portada de un terrario es su foto más antigua: la primera que se sube
+ * queda fija, no cambia si después se agregan más a la galería.
+ */
+export async function obtenerFotoPortada(terrarioId) {
+  const { data, error } = await supabase
+    .from('terrario_fotos')
+    .select('*')
+    .eq('terrario_id', terrarioId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function subirFotoTerrario(terrarioId, file) {
   if (!TIPOS_PERMITIDOS.includes(file.type)) {
     return { ok: false, reason: 'tipo_invalido' };
