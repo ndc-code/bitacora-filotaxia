@@ -1,22 +1,21 @@
 import { qs, escapeHtml, showError, clearError } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
-import { obtenerItemColeccion } from '../services/coleccion.js';
+import { obtenerTerrario, actualizarTerrario, eliminarTerrario } from '../services/terrarios.js';
+import { listarColeccion, quitarDeColeccion } from '../services/coleccion.js';
+import { idDeColeccion } from '../utils/coleccion-card.js';
 import {
-  listarCuidadosColeccion,
-  registrarCuidadoColeccion,
-  eliminarCuidadoColeccion,
-} from '../services/coleccion-cuidados.js';
+  listarCuidadosTerrario,
+  registrarCuidadoTerrario,
+  eliminarCuidadoTerrario,
+} from '../services/terrario-cuidados.js';
 import {
   FOTOS_LIMITE,
-  listarFotosColeccion,
-  subirFotoColeccion,
-  eliminarFotoColeccion,
-  obtenerUrlFoto,
-} from '../services/coleccion-fotos.js';
-import { riegosDePlanta } from '../utils/coleccion-card.js';
-import { categoriaDe } from '../utils/catalog-categorias.js';
-import { estacionActual, riegoParaEstacion } from '../utils/catalog-riego-estacion.js';
-import { diasDeRiego, formatFechaCorta } from '../utils/riego-frecuencia.js';
+  listarFotosTerrario,
+  subirFotoTerrario,
+  eliminarFotoTerrario,
+} from '../services/terrario-fotos.js';
+import { obtenerUrlFoto } from '../services/coleccion-fotos.js';
+import { formatFechaCorta } from '../utils/riego-frecuencia.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
@@ -33,13 +32,15 @@ const ETIQUETAS_TIPO = {
   otro: 'Otro',
 };
 
+const TIPO_LABEL = { abierto: 'Terrario abierto', cerrado: 'Terrario cerrado' };
+
 const MESES_LARGOS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
 ];
 const DIAS_SEMANA = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
-const coleccionId = new URLSearchParams(window.location.search).get('id');
+const terrarioId = new URLSearchParams(window.location.search).get('id');
 
 let mesCalendario = new Date();
 mesCalendario.setDate(1);
@@ -81,19 +82,20 @@ function wireSidebarToggle() {
   });
 }
 
-function renderFoto(planta) {
-  const imagen = planta.imagen || (Array.isArray(planta.galeria) ? planta.galeria[0] : '');
+function renderFoto(items) {
+  const primeraImagen = items.find((item) => item.imagen || (Array.isArray(item.galeria) && item.galeria[0]));
+  const imagen = primeraImagen ? (primeraImagen.imagen || primeraImagen.galeria[0]) : '';
   qs('#bitacora-foto').innerHTML = imagen
-    ? `<img src="${escapeHtml(imagen)}" alt="${escapeHtml(planta.nombre)}" />`
+    ? `<img src="${escapeHtml(imagen)}" alt="${escapeHtml(terrarioActual?.nombre || '')}" />`
     : '';
 }
 
-async function renderGaleriaGrid(coleccionId) {
+async function renderGaleriaGrid(terrarioId) {
   const grid = qs('#bitacora-galeria-grid');
-  const fotos = await listarFotosColeccion(coleccionId);
+  const fotos = await listarFotosTerrario(terrarioId);
 
   if (!fotos.length) {
-    grid.innerHTML = '<p class="bitacora-galeria-vacio">Todavía no subiste fotos de este ítem.</p>';
+    grid.innerHTML = '<p class="bitacora-galeria-vacio">Todavía no subiste fotos de este terrario.</p>';
     return;
   }
 
@@ -116,30 +118,14 @@ async function renderGaleriaGrid(coleccionId) {
     .join('');
 }
 
-function descripcionDe(planta) {
-  const especie = planta.especie || '';
-  const categoria = categoriaDe(planta);
-  const detalles = [
-    planta.ubicacion ? `prefiere ${planta.ubicacion.toLowerCase()}` : null,
-    planta.luz ? `luz ${planta.luz.toLowerCase()}` : null,
-    planta.suelo ? `suelo ${planta.suelo.toLowerCase()}` : null,
-    planta.cuidado ? `cuidado ${planta.cuidado.toLowerCase()}` : null,
-  ].filter(Boolean);
-
-  const partes = [];
-  if (especie) partes.push(especie);
-  if (categoria && categoria !== '—') partes.push(categoria.toLowerCase());
-  const bajada = partes.join(' · ');
-
-  const cuerpo = detalles.length
-    ? `${bajada}${bajada ? ' — ' : ''}${detalles.join(', ')}.`
-    : bajada;
-
-  const enColeccion = planta.created_at
-    ? `En colección desde ${formatFechaCorta(planta.created_at)}.`
+function descripcionDe(terrario, cantidadItems) {
+  const tipo = TIPO_LABEL[terrario.tipo] || '';
+  const cantidad = `${cantidadItems} ${cantidadItems === 1 ? 'ítem' : 'ítems'}`;
+  const bajada = [tipo, cantidad].filter(Boolean).join(' · ');
+  const enColeccion = terrario.created_at
+    ? `Creado el ${formatFechaCorta(terrario.created_at)}.`
     : '';
-
-  return [cuerpo, enColeccion].filter(Boolean).join(' ');
+  return [bajada, enColeccion].filter(Boolean).join(' — ');
 }
 
 function filaDetalleMarkup(indice, nombre, valor) {
@@ -151,15 +137,40 @@ function filaDetalleMarkup(indice, nombre, valor) {
   `;
 }
 
-function renderDetalle(planta) {
+function filaRiegoFrecuenciaMarkup(indice, frecuenciaDias) {
+  return `
+    <li class="bitacora-detalle-item">
+      <span class="bitacora-detalle-nombre"><span class="bitacora-detalle-idx">${String(indice).padStart(2, '0')}</span>Regar cada</span>
+      <span class="bitacora-detalle-valor">
+        <input class="bitacora-input" type="number" min="1" id="input-riego-frecuencia" value="${frecuenciaDias ?? ''}" placeholder="días" style="width: 80px;" /> días
+      </span>
+    </li>
+  `;
+}
+
+function renderDetalle(terrario, cantidadItems) {
   qs('#bitacora-detalle').innerHTML = [
-    filaDetalleMarkup(1, 'Categoría', escapeHtml(categoriaDe(planta))),
-    filaDetalleMarkup(2, 'Especie', escapeHtml(planta.especie || '—')),
-    filaDetalleMarkup(3, 'Ubicación', escapeHtml(planta.ubicacion || '—')),
-    filaDetalleMarkup(4, 'Luz', escapeHtml(planta.luz || '—')),
-    filaDetalleMarkup(5, 'Suelo', escapeHtml(planta.suelo || '—')),
-    filaDetalleMarkup(6, 'Cuidado', escapeHtml(planta.cuidado || '—')),
+    filaDetalleMarkup(1, 'Tipo', escapeHtml(TIPO_LABEL[terrario.tipo] || '—')),
+    filaDetalleMarkup(2, 'Ítems', String(cantidadItems)),
+    filaRiegoFrecuenciaMarkup(3, terrario.riego_frecuencia_dias),
   ].join('');
+}
+
+function wireRiegoFrecuencia(terrario) {
+  const input = qs('#input-riego-frecuencia');
+  if (!input) return;
+
+  input.addEventListener('change', async () => {
+    const numero = Number.parseInt(input.value, 10);
+    const valor = Number.isFinite(numero) && numero >= 1 ? numero : null;
+    input.value = valor ?? '';
+
+    const result = await actualizarTerrario(terrario.id, { riego_frecuencia_dias: valor });
+    if (result.ok) {
+      terrario.riego_frecuencia_dias = valor;
+      actualizarCalendario(terrario, calendarioCtx?.eventos || []);
+    }
+  });
 }
 
 function renderNotas(eventos) {
@@ -211,10 +222,9 @@ function renderCalendario() {
   const cont = qs('#bitacora-calendario');
   if (!cont || !calendarioCtx) return;
 
-  const { planta, eventos } = calendarioCtx;
-  const riego = riegoParaEstacion(riegosDePlanta(planta), planta.riego, estacionActual());
-  const frecuenciaDias = diasDeRiego(riego);
-  const fechasRiego = fechasDeRiego(planta.created_at, frecuenciaDias);
+  const { terrario, eventos } = calendarioCtx;
+  const frecuenciaDias = terrario.riego_frecuencia_dias;
+  const fechasRiego = fechasDeRiego(terrario.created_at, frecuenciaDias);
 
   const anio = mesCalendario.getFullYear();
   const mes = mesCalendario.getMonth();
@@ -255,16 +265,16 @@ function renderCalendario() {
       ${DIAS_SEMANA.map((d) => `<span class="bitacora-calendario-dia-nombre">${d}</span>`).join('')}
     </div>
     <div class="bitacora-calendario-grid">${celdas.join('')}</div>
-    ${frecuenciaDias ? '' : '<p class="bitacora-calendario-vacio">Configurá la frecuencia de riego de este ítem para ver las próximas fechas.</p>'}
+    ${frecuenciaDias ? '' : '<p class="bitacora-calendario-vacio">Configurá la frecuencia de riego de este terrario para ver las próximas fechas.</p>'}
   `;
 }
 
-function actualizarCalendario(planta, eventos) {
-  calendarioCtx = { planta, eventos };
+function actualizarCalendario(terrario, eventos) {
+  calendarioCtx = { terrario, eventos };
   renderCalendario();
 }
 
-function wireCalendario(planta) {
+function wireCalendario(terrario) {
   const cont = qs('#bitacora-calendario');
   if (!cont || cont.dataset.wired) return;
   cont.dataset.wired = '1';
@@ -284,7 +294,7 @@ function wireCalendario(planta) {
     celda.disabled = true;
     try {
       if (idsRegado.length) {
-        await Promise.all(idsRegado.map((id) => eliminarCuidadoColeccion(id)));
+        await Promise.all(idsRegado.map((id) => eliminarCuidadoTerrario(id)));
       } else {
         const fecha = new Date(
           mesCalendario.getFullYear(),
@@ -292,9 +302,9 @@ function wireCalendario(planta) {
           Number(celda.dataset.dia),
           12
         );
-        await registrarCuidadoColeccion(planta.id, 'regar', fecha.toISOString(), null);
+        await registrarCuidadoTerrario(terrario.id, 'regar', fecha.toISOString(), null);
       }
-      await pintarBitacora(planta);
+      await pintarBitacora(terrario);
     } catch (err) {
       console.error('No se pudo actualizar el riego', err);
       celda.disabled = false;
@@ -305,12 +315,12 @@ function wireCalendario(planta) {
 const MENSAJES_ERROR_FOTO = {
   tipo_invalido: 'Ese archivo no es una imagen válida (jpg, png, webp o gif).',
   muy_pesada: 'La imagen pesa más de 5MB. Probá con una más liviana.',
-  limite_alcanzado: `Ya llegaste al máximo de ${FOTOS_LIMITE} fotos para esta planta.`,
+  limite_alcanzado: `Ya llegaste al máximo de ${FOTOS_LIMITE} fotos para este terrario.`,
   not_authenticated: 'Iniciá sesión de nuevo para subir fotos.',
   error: 'No pudimos subir la foto. Probá otra vez.',
 };
 
-function wireSubidaFoto(planta) {
+function wireSubidaFoto(terrario) {
   const input = qs('#input-foto-galeria');
   const errorEl = qs('#error-galeria');
   if (!input) return;
@@ -322,12 +332,12 @@ function wireSubidaFoto(planta) {
     clearError(errorEl);
 
     try {
-      const result = await subirFotoColeccion(planta.id, file);
+      const result = await subirFotoTerrario(terrario.id, file);
       if (!result.ok) {
         showError(errorEl, MENSAJES_ERROR_FOTO[result.reason] ?? MENSAJES_ERROR_FOTO.error);
         return;
       }
-      await renderGaleriaGrid(planta.id);
+      await renderGaleriaGrid(terrario.id);
     } catch (err) {
       console.error('Error subiendo foto', err);
       showError(errorEl, MENSAJES_ERROR_FOTO.error);
@@ -337,7 +347,7 @@ function wireSubidaFoto(planta) {
   });
 }
 
-function wireEliminarFoto(planta) {
+function wireEliminarFoto(terrario) {
   const grid = qs('#bitacora-galeria-grid');
   if (!grid) return;
 
@@ -351,13 +361,13 @@ function wireEliminarFoto(planta) {
 
     btn.disabled = true;
     try {
-      const result = await eliminarFotoColeccion({ id, storage_path: item.dataset.path });
+      const result = await eliminarFotoTerrario({ id, storage_path: item.dataset.path });
       if (!result.ok) {
         console.error('No se pudo eliminar la foto', result.error);
         btn.disabled = false;
         return;
       }
-      await renderGaleriaGrid(planta.id);
+      await renderGaleriaGrid(terrario.id);
     } catch (err) {
       console.error('Error eliminando foto', err);
       btn.disabled = false;
@@ -365,7 +375,7 @@ function wireEliminarFoto(planta) {
   });
 }
 
-function wireEliminarNota(planta) {
+function wireEliminarNota(terrario) {
   const lista = qs('#bitacora-notas');
   if (!lista) return;
 
@@ -379,8 +389,8 @@ function wireEliminarNota(planta) {
 
     btn.disabled = true;
     try {
-      await eliminarCuidadoColeccion(id);
-      await pintarBitacora(planta);
+      await eliminarCuidadoTerrario(id);
+      await pintarBitacora(terrario);
     } catch (err) {
       console.error('No se pudo eliminar la nota', err);
       btn.disabled = false;
@@ -396,16 +406,109 @@ function mostrarSolo(idVisible) {
   if (errorEl) errorEl.hidden = idVisible !== 'error-pagina';
 }
 
-async function pintarBitacora(planta) {
-  const eventos = await listarCuidadosColeccion(planta.id);
-  renderFoto(planta);
-  qs('#bitacora-nombre').textContent = planta.nombre || '';
-  qs('#bitacora-especie').textContent = descripcionDe(planta);
-  document.title = `${planta.nombre || 'Bitácora'} — Filotaxia`;
-  renderDetalle(planta);
+let terrarioActual = null;
+
+function crearTarjetaItem(item) {
+  const id = idDeColeccion(item);
+  const nombre = escapeHtml(item.nombre || '');
+  const imagen = item.imagen || (Array.isArray(item.galeria) ? item.galeria[0] : '') || '';
+
+  const card = document.createElement('div');
+  card.className = 'terrario-item';
+  card.dataset.id = id;
+
+  const imagenDiv = document.createElement('div');
+  imagenDiv.className = 'terrario-item-imagen';
+  if (imagen) imagenDiv.style.backgroundImage = `url("${imagen}")`;
+  card.appendChild(imagenDiv);
+
+  card.innerHTML += `
+    <div class="terrario-item-info">
+      <span class="terrario-item-nombre">${nombre}</span>
+      <button type="button" class="coleccion-eliminar-btn" data-id="${escapeHtml(id)}" title="Eliminar de Colección" aria-label="Eliminar ${nombre} de Colección">Eliminar</button>
+    </div>
+  `;
+
+  return card;
+}
+
+function renderItems(items) {
+  const grid = qs('#terrario-grid');
+  const vacio = qs('#terrario-vacio');
+  if (!grid || !vacio) return;
+
+  grid.innerHTML = '';
+  vacio.hidden = items.length > 0;
+
+  for (const item of items) {
+    grid.appendChild(crearTarjetaItem(item));
+  }
+}
+
+function wireEliminarItem() {
+  const grid = qs('#terrario-grid');
+  if (!grid) return;
+
+  grid.addEventListener('click', async (event) => {
+    const btn = event.target.closest('.coleccion-eliminar-btn');
+    if (!btn) return;
+
+    event.preventDefault();
+
+    const id = btn.dataset.id;
+    if (!id || btn.disabled) return;
+
+    btn.disabled = true;
+    const result = await quitarDeColeccion(id);
+
+    if (result.ok || result.reason === 'missing') {
+      await pintarBitacora(terrarioActual);
+      return;
+    }
+
+    btn.disabled = false;
+    mostrarErrorDePagina('No pudimos eliminar el ítem de este terrario. Probá otra vez.');
+  });
+}
+
+function wireEliminarTerrarioBtn() {
+  const btn = qs('#btn-eliminar-terrario');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    const confirmado = window.confirm('¿Eliminar este terrario? No se puede deshacer.');
+    if (!confirmado) return;
+
+    btn.disabled = true;
+    const result = await eliminarTerrario(terrarioActual.id);
+
+    if (result.ok) {
+      window.location.href = 'coleccion.html';
+      return;
+    }
+
+    btn.disabled = false;
+    mostrarErrorDePagina('No pudimos eliminar el terrario. Probá otra vez.');
+  });
+}
+
+async function pintarBitacora(terrario) {
+  terrarioActual = terrario;
+  const [eventos, items] = await Promise.all([
+    listarCuidadosTerrario(terrario.id),
+    listarColeccion().then((todos) => todos.filter((item) => item.terrario_id === terrario.id)),
+  ]);
+
+  renderFoto(items);
+  qs('#bitacora-nombre').textContent = terrario.nombre || '';
+  qs('#bitacora-especie').textContent = descripcionDe(terrario, items.length);
+  document.title = `${terrario.nombre || 'Bitácora'} — Filotaxia`;
+  renderDetalle(terrario, items.length);
+  wireRiegoFrecuencia(terrario);
+  renderItems(items);
   renderNotas(eventos);
-  actualizarCalendario(planta, eventos);
-  await renderGaleriaGrid(planta.id);
+  actualizarCalendario(terrario, eventos);
+  await renderGaleriaGrid(terrario.id);
 }
 
 function wireAgregarEntrada() {
@@ -430,14 +533,14 @@ function wireTipoCuidado() {
   const actualizar = () => {
     const esObservacion = select.value === 'observacion';
     label.textContent = esObservacion ? 'Qué observaste' : 'Notas';
-    input.placeholder = esObservacion ? 'Contá qué notaste en el ítem' : 'Opcional';
+    input.placeholder = esObservacion ? 'Contá qué notaste en el terrario' : 'Opcional';
   };
 
   select.addEventListener('change', actualizar);
   actualizar();
 }
 
-function wireFormCuidado(planta) {
+function wireFormCuidado(terrario) {
   const form = qs('#form-cuidado');
   const errorEl = qs('#error-cuidado');
   const submitBtn = form.querySelector('[type="submit"]');
@@ -452,7 +555,7 @@ function wireFormCuidado(planta) {
     const notas = qs('#notas-cuidado').value || null;
 
     if (tipo === 'observacion' && !notas) {
-      showError(errorEl, 'Contá qué observaste en el ítem.');
+      showError(errorEl, 'Contá qué observaste en el terrario.');
       qs('#notas-cuidado').focus();
       return;
     }
@@ -476,12 +579,12 @@ function wireFormCuidado(planta) {
         return;
       }
 
-      await registrarCuidadoColeccion(planta.id, tipo, new Date().toISOString(), notas);
+      await registrarCuidadoTerrario(terrario.id, tipo, new Date().toISOString(), notas);
       form.reset();
       qs('#tipo-cuidado').value = 'regar';
       form.hidden = true;
       if (agregarBtn) agregarBtn.textContent = '+ Agregar entrada';
-      await pintarBitacora(planta);
+      await pintarBitacora(terrario);
     } catch (err) {
       showError(errorEl, err.message);
     } finally {
@@ -493,51 +596,53 @@ function wireFormCuidado(planta) {
   });
 }
 
-async function cargarPlanta() {
-  if (!coleccionId) {
+async function cargarTerrario() {
+  if (!terrarioId) {
     mostrarSolo('mensaje-faltante');
     return null;
   }
 
-  let planta;
+  let terrario;
   try {
-    planta = await obtenerItemColeccion(coleccionId);
+    terrario = await obtenerTerrario(terrarioId);
   } catch (err) {
-    console.error('No se pudo cargar el ítem', err);
+    console.error('No se pudo cargar el terrario', err);
     mostrarSolo('error-pagina');
-    mostrarErrorDePagina('No pudimos cargar este ítem. Probá otra vez.');
+    mostrarErrorDePagina('No pudimos cargar este terrario. Probá otra vez.');
     return null;
   }
 
-  if (!planta) {
+  if (!terrario) {
     mostrarSolo('mensaje-faltante');
     return null;
   }
 
   try {
-    await pintarBitacora(planta);
+    await pintarBitacora(terrario);
   } catch (err) {
     console.error('No se pudo cargar la bitácora', err);
     mostrarSolo('error-pagina');
-    mostrarErrorDePagina('No pudimos cargar este ítem. Probá otra vez.');
+    mostrarErrorDePagina('No pudimos cargar este terrario. Probá otra vez.');
     return null;
   }
 
   mostrarSolo('bitacora-contenido');
-  return planta;
+  return terrario;
 }
 
-function wireDetallePlanta(planta) {
-  if (!planta || qs('#form-cuidado').dataset.wired) return;
+function wireDetalleTerrario(terrario) {
+  if (!terrario || qs('#form-cuidado').dataset.wired) return;
   qs('#form-cuidado').dataset.wired = '1';
 
-  wireFormCuidado(planta);
+  wireFormCuidado(terrario);
   wireAgregarEntrada();
   wireTipoCuidado();
-  wireEliminarNota(planta);
-  wireSubidaFoto(planta);
-  wireEliminarFoto(planta);
-  wireCalendario(planta);
+  wireEliminarNota(terrario);
+  wireSubidaFoto(terrario);
+  wireEliminarFoto(terrario);
+  wireCalendario(terrario);
+  wireEliminarItem();
+  wireEliminarTerrarioBtn();
 }
 
 const authModal = wireAuthModal();
@@ -547,8 +652,8 @@ const authNav = wireAuthNav({
       onSuccess: async () => {
         await authNav.sync();
         await syncColeccionNavCount();
-        const planta = await cargarPlanta();
-        wireDetallePlanta(planta);
+        const terrario = await cargarTerrario();
+        wireDetalleTerrario(terrario);
       },
     });
   },
@@ -566,7 +671,7 @@ iniciarPagina(async function init() {
     return;
   }
 
-  const planta = await cargarPlanta();
-  if (!planta) return;
-  wireDetallePlanta(planta);
+  const terrario = await cargarTerrario();
+  if (!terrario) return;
+  wireDetalleTerrario(terrario);
 });

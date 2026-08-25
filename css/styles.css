@@ -2795,94 +2795,53 @@ body.sidebar-open::before {
   margin: 0 0 var(--space-8);
 }
 
-/* Grid de imágenes por terrario: cada .coleccion-terrario-tiles es una
-   etiqueta + sus tiles, y todos los grupos de la sección fluyen juntos en
-   el mismo grid (estilo portfolio), en vez de listas apiladas. */
+/* Grid de terrarios: un tile por terrario (una sola imagen representativa),
+   que lleva a su bitácora. */
 .coleccion-grid {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 4px;
+  gap: var(--space-4);
 }
 
-.coleccion-terrario-tiles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+.coleccion-terrario-tile {
+  display: block;
+  width: 180px;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: var(--color-ink);
   transition: opacity 250ms ease;
 }
 
-/* Al pasar el mouse por un grupo, el resto se atenúa para que quede claro
-   qué imágenes son de qué terrario. */
-#coleccion-rows.has-hover .coleccion-terrario-tiles:not(.is-active) {
+/* Al pasar el mouse por un tile, el resto se atenúa para que quede claro
+   cuál es cuál. */
+#coleccion-rows.has-hover .coleccion-terrario-tile:not(.is-active) {
   opacity: 0.25;
 }
 
-.coleccion-terrario-tiles-label,
-.coleccion-tile {
-  width: 160px;
-  height: 160px;
-  flex-shrink: 0;
-}
-
-.coleccion-terrario-tiles-label {
-  display: flex;
-  align-items: flex-end;
-  padding: var(--space-3);
-  background: var(--color-border);
-  color: var(--color-ink);
-  text-decoration: none;
-}
-
-.coleccion-terrario-tiles-label span {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 1.1;
-}
-
-.coleccion-tile {
-  display: block;
+.coleccion-terrario-tile-imagen {
+  width: 100%;
+  aspect-ratio: 1 / 1;
   background-color: var(--color-border);
   background-size: cover;
   background-position: center;
-  text-decoration: none;
+}
+
+.coleccion-terrario-tile-nombre {
+  display: block;
+  margin-top: var(--space-2);
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 18px;
 }
 
 @media (max-width: 599px) {
-  .coleccion-terrario-tiles-label,
-  .coleccion-tile {
-    width: 110px;
-    height: 110px;
+  .coleccion-terrario-tile {
+    width: 130px;
   }
 }
 
-/* --- Terrario (vista single-page de un terrario) --- */
-.terrario-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-4);
-  margin: 70px var(--catalog-inline) var(--space-6);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-ink);
-}
-
-.terrario-heading h1 {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  font-size: clamp(40px, 6vw, 64px);
-  letter-spacing: -3px;
-  margin: 0;
-  color: var(--color-ink);
-}
-
-.terrario-tipo {
-  font-size: 14px;
-  color: var(--color-gray-mid);
-  margin: 0;
-}
-
+/* --- Terrario (grid de ítems y acción de eliminar, dentro de bitacora.html) --- */
 .terrario-eliminar-btn {
   margin-left: auto;
   align-self: center;

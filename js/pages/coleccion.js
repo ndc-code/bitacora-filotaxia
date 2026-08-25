@@ -11,40 +11,38 @@ import { iniciarPagina } from '../utils/guard.js';
 
 const TIPO_TITULO = { abierto: 'Abiertos', cerrado: 'Cerrados' };
 
-function imagenDeItem(item) {
-  const galeria = Array.isArray(item.galeria) ? item.galeria : [];
-  return item.imagen || galeria[0] || '';
+function imagenDeTerrario(items) {
+  for (const item of items) {
+    const galeria = Array.isArray(item.galeria) ? item.galeria : [];
+    const imagen = item.imagen || galeria[0];
+    if (imagen) return imagen;
+  }
+  return '';
 }
 
 /**
- * Un grupo por terrario: una "etiqueta" del mismo tamaño que un tile,
- * seguida de un tile por ítem. Todos los grupos de una sección fluyen
- * juntos en el mismo grid, como en la referencia de portfolio.
+ * Un tile por terrario (una sola imagen representativa, la del primer ítem
+ * que tenga una), que lleva directo a su bitácora — ahí vive el contenido
+ * completo del terrario (sus ítems, cuidados, riego, galería).
  */
-function crearGrupoTiles(terrario, items) {
-  const grupo = document.createElement('div');
-  grupo.className = 'coleccion-terrario-tiles';
-  grupo.dataset.terrarioId = terrario.id;
+function crearTileTerrario(terrario, items) {
+  const tile = document.createElement('a');
+  tile.className = 'coleccion-terrario-tile';
+  tile.href = `bitacora.html?id=${encodeURIComponent(terrario.id)}`;
+  tile.dataset.terrarioId = terrario.id;
 
-  const href = `terrario.html?id=${encodeURIComponent(terrario.id)}`;
+  const imagenDiv = document.createElement('div');
+  imagenDiv.className = 'coleccion-terrario-tile-imagen';
+  const imagen = imagenDeTerrario(items);
+  if (imagen) imagenDiv.style.backgroundImage = `url("${imagen}")`;
+  tile.appendChild(imagenDiv);
 
-  const label = document.createElement('a');
-  label.className = 'coleccion-terrario-tiles-label';
-  label.href = href;
-  label.innerHTML = `<span>${escapeHtml(terrario.nombre)}</span>`;
-  grupo.appendChild(label);
+  const nombre = document.createElement('span');
+  nombre.className = 'coleccion-terrario-tile-nombre';
+  nombre.textContent = terrario.nombre;
+  tile.appendChild(nombre);
 
-  for (const item of items) {
-    const tile = document.createElement('a');
-    tile.className = 'coleccion-tile';
-    tile.href = href;
-    tile.title = item.nombre || '';
-    const imagen = imagenDeItem(item);
-    if (imagen) tile.style.backgroundImage = `url("${imagen}")`;
-    grupo.appendChild(tile);
-  }
-
-  return grupo;
+  return tile;
 }
 
 function crearSeccionTipo(tipo, grupos) {
@@ -70,7 +68,7 @@ function crearSeccionTipo(tipo, grupos) {
   const grid = document.createElement('div');
   grid.className = 'coleccion-grid';
   for (const { terrario, items } of grupos) {
-    grid.appendChild(crearGrupoTiles(terrario, items));
+    grid.appendChild(crearTileTerrario(terrario, items));
   }
   section.appendChild(grid);
 
@@ -106,30 +104,29 @@ async function render(root) {
 }
 
 /**
- * Al pasar el mouse por el grupo de tiles de un terrario, el resto se atenúa
- * — así queda claro qué imágenes pertenecen a cuál terrario sin necesidad de
- * separadores visuales pesados entre ellos.
+ * Al pasar el mouse por el tile de un terrario, el resto se atenúa — así
+ * queda claro cuál es cuál sin necesidad de separadores visuales pesados.
  */
 function wireHoverAislado(root) {
   if (!root) return;
 
   root.addEventListener('mouseover', (event) => {
-    const grupo = event.target.closest('.coleccion-terrario-tiles');
-    if (!grupo || !root.contains(grupo)) return;
+    const tile = event.target.closest('.coleccion-terrario-tile');
+    if (!tile || !root.contains(tile)) return;
 
     root.classList.add('has-hover');
-    qsa('.coleccion-terrario-tiles', root).forEach((g) => {
-      g.classList.toggle('is-active', g === grupo);
+    qsa('.coleccion-terrario-tile', root).forEach((t) => {
+      t.classList.toggle('is-active', t === tile);
     });
   });
 
   root.addEventListener('mouseout', (event) => {
-    const grupo = event.target.closest('.coleccion-terrario-tiles');
-    if (!grupo || !root.contains(grupo)) return;
-    if (grupo.contains(event.relatedTarget)) return;
+    const tile = event.target.closest('.coleccion-terrario-tile');
+    if (!tile || !root.contains(tile)) return;
+    if (tile.contains(event.relatedTarget)) return;
 
     root.classList.remove('has-hover');
-    qsa('.coleccion-terrario-tiles', root).forEach((g) => g.classList.remove('is-active'));
+    qsa('.coleccion-terrario-tile', root).forEach((t) => t.classList.remove('is-active'));
   });
 }
 

@@ -14,7 +14,7 @@
 <body class="catalog-page catalog-page--coleccion catalog-page--bitacora">
   <header class="catalog-header">
     <p class="catalog-header-left">
-      Diario de cuidados de este ítem: riegos y notas a lo largo del tiempo.
+      Diario de cuidados de este terrario: riegos y notas a lo largo del tiempo.
     </p>
     <nav class="catalog-nav" aria-label="Principal">
       <a class="catalog-nav-link" href="index.html">Index</a>
@@ -59,10 +59,10 @@
   <p class="field-error" id="error-pagina" hidden></p>
 
   <p id="mensaje-sesion" class="catalog-empty" hidden>
-    Iniciá sesión para ver la bitácora de esta planta.
+    Iniciá sesión para ver la bitácora de este terrario.
   </p>
   <p id="mensaje-faltante" class="catalog-empty" hidden>
-    No encontramos esa planta. <a href="coleccion.html">Volver a Colección</a>
+    No encontramos ese terrario. <a href="coleccion.html">Volver a Colección</a>
   </p>
 
   <div id="bitacora-contenido" class="bitacora-layout" hidden>
@@ -72,6 +72,7 @@
           <h1 id="bitacora-nombre"></h1>
           <p class="bitacora-especie" id="bitacora-especie"></p>
         </div>
+        <button type="button" class="terrario-eliminar-btn" id="btn-eliminar-terrario">Eliminar terrario</button>
       </header>
 
       <div class="bitacora-divider"></div>
@@ -79,6 +80,14 @@
       <section class="bitacora-section" id="seccion-detalle">
         <p class="bitacora-section-label">Detalle</p>
         <ul class="bitacora-detalle-grid" id="bitacora-detalle"></ul>
+      </section>
+
+      <section class="bitacora-section" id="seccion-items">
+        <p class="bitacora-section-label">Ítems</p>
+        <div class="terrario-grid" id="terrario-grid"></div>
+        <p class="coleccion-tipo-vacio" id="terrario-vacio" hidden>
+          Todavía no le agregaste nada a este terrario. Sumá algo desde Index.
+        </p>
       </section>
 
       <section class="bitacora-section" id="seccion-bitacora">

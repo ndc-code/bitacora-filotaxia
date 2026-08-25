@@ -39,6 +39,30 @@ export async function obtenerTerrario(id) {
   return data;
 }
 
+export async function actualizarTerrario(id, cambios) {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    return { ok: false, reason: 'not_authenticated' };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('terrarios')
+      .update(cambios)
+      .eq('id', id)
+      .eq('user_id', session.user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { ok: true, terrario: data };
+  } catch (error) {
+    console.error('Error actualizando terrario:', error);
+    return { ok: false, reason: 'error' };
+  }
+}
+
 export async function crearTerrario({ nombre, tipo }) {
   const session = await getSession();
   if (!session?.user?.id) {
