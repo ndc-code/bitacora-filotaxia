@@ -139,19 +139,18 @@ function crearFilaSplit(terrario, items) {
  * Columna sticky con info general del tipo de terrario (no de los terrarios
  * puntuales del usuario): qué es, cómo cuidarlo, qué plantas le van bien.
  */
-function crearCopySplit(tipo, cantidad) {
+function crearCopySplit(tipo) {
   const info = TIPO_INFO[tipo];
   const aside = document.createElement('aside');
   aside.className = 'coleccion-split-copy';
   aside.innerHTML = `
     <h1 class="coleccion-split-titulo">${escapeHtml(TIPO_TITULO_SPLIT[tipo])}</h1>
-    <p class="coleccion-split-count">(${cantidad})</p>
     <p class="coleccion-split-descripcion">${escapeHtml(info.descripcion)}</p>
-    <p class="coleccion-split-label">Cuidados</p>
+    <p class="coleccion-split-label-texto">(Cuidados)</p>
     <ul class="coleccion-split-cuidados">
       ${info.cuidados.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}
     </ul>
-    <p class="coleccion-split-label">Plantas típicas</p>
+    <p class="coleccion-split-label-texto">(Plantas típicas)</p>
     <p class="coleccion-split-descripcion">${escapeHtml(info.plantas)}</p>
   `;
   return aside;
@@ -176,7 +175,7 @@ function renderSplit(root, tipo, grupos) {
   }
 
   split.appendChild(lista);
-  split.appendChild(crearCopySplit(tipo, grupos.length));
+  split.appendChild(crearCopySplit(tipo));
   root.appendChild(split);
 }
 
