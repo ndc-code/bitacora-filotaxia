@@ -15,26 +15,42 @@ export function idDeColeccion(planta) {
   return planta.id || '';
 }
 
-export function entryMarkup(planta) {
-  const galeria = Array.isArray(planta.galeria) ? planta.galeria : [];
-  const imagen = planta.imagen || galeria[0] || '';
-  const nombre = escapeHtml(planta.nombre);
-  const id = escapeHtml(planta.id || '');
+/**
+ * Fila de tabla para un ítem de colección, con el mismo formato de columnas
+ * que el catálogo de Index (Nombre/Especie/Sol/Luminosidad/Riego/Clima/
+ * Suelo/Cuidado), reusando las clases `.catalog-row`/`.catalog-riego` para
+ * que ambas páginas compartan estilos y el toggle de estación de riego.
+ */
+export function filaTablaMarkup(planta) {
+  const id = escapeHtml(idDeColeccion(planta));
+  const nombre = escapeHtml(planta.nombre || '');
+  const especie = escapeHtml(planta.especie || '—');
+  const sol = escapeHtml(planta.ubicacion || '—');
+  const luz = escapeHtml(planta.luz || '—');
+  const riego = escapeHtml(planta.riego || '—');
+  const clima = escapeHtml(planta.clima || '—');
+  const suelo = escapeHtml(planta.suelo || '—');
+  const cuidado = escapeHtml(planta.cuidado || '—');
 
   return `
-    <div class="coleccion-row">
-      <a class="coleccion-row-link" href="bitacora.html?id=${id}" data-imagen="${escapeHtml(imagen)}">
-        <span class="coleccion-row-title">
-          <span class="coleccion-row-text">${nombre}</span>
-          <button
-            type="button"
-            class="coleccion-eliminar-btn"
-            data-id="${escapeHtml(idDeColeccion(planta))}"
-            title="Eliminar de Colección"
-            aria-label="Eliminar ${nombre} de Colección"
-          >Eliminar</button>
-        </span>
-      </a>
+    <div class="catalog-row" role="row">
+      <span><a class="coleccion-tabla-nombre" href="bitacora.html?id=${id}">${nombre}</a></span>
+      <span>${especie}</span>
+      <span>${sol}</span>
+      <span>${luz}</span>
+      <span class="catalog-riego">${riego}</span>
+      <span>${clima}</span>
+      <span>${suelo}</span>
+      <span>${cuidado}</span>
+      <span class="catalog-cell--action">
+        <button
+          type="button"
+          class="coleccion-eliminar-btn"
+          data-id="${id}"
+          title="Eliminar de Colección"
+          aria-label="Eliminar ${nombre} de Colección"
+        >Eliminar</button>
+      </span>
     </div>
   `;
 }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { entryMarkup } from './coleccion-card.js';
+import { filaTablaMarkup } from './coleccion-card.js';
 
 function plantaCard(extra = {}) {
   return {
@@ -10,43 +10,44 @@ function plantaCard(extra = {}) {
     luz: 'Baja',
     suelo: 'Franco',
     cuidado: 'Fácil',
+    clima: 'Templado',
     riego: 'Cada 10 días',
     ...extra,
   };
 }
 
-test('la fila muestra el nombre de la planta como link', () => {
-  const html = entryMarkup(plantaCard());
-  assert.match(html, /class="coleccion-row-link"/);
-  assert.match(html, /class="coleccion-row-text">Aglaonema</);
+test('la fila muestra el nombre de la planta como link a su bitácora', () => {
+  const html = filaTablaMarkup(plantaCard());
+  assert.match(html, /class="coleccion-tabla-nombre" href="bitacora.html\?id="/);
+  assert.match(html, />Aglaonema</);
 });
 
 test('el link de la fila apunta a la bitácora de la planta por uuid', () => {
-  const html = entryMarkup(
+  const html = filaTablaMarkup(
     plantaCard({ id: '11111111-1111-4111-8111-111111111111' })
   );
   assert.match(html, /href="bitacora.html\?id=11111111-1111-4111-8111-111111111111"/);
 });
 
-test('sin id de fila, el link de bitácora queda vacío pero no rompe', () => {
-  const html = entryMarkup(plantaCard());
-  assert.match(html, /href="bitacora.html\?id="/);
+test('la fila muestra especie, sol, luz, riego, clima, suelo y cuidado en sus columnas', () => {
+  const html = filaTablaMarkup(plantaCard());
+  assert.match(html, />Aglaonema commutatum</);
+  assert.match(html, />Sombra</);
+  assert.match(html, />Baja</);
+  assert.match(html, /class="catalog-riego">Cada 10 días</);
+  assert.match(html, />Templado</);
+  assert.match(html, />Franco</);
+  assert.match(html, />Fácil</);
 });
 
-test('la fila expone la imagen de la planta para el preview fijo', () => {
-  const html = entryMarkup(plantaCard({ imagen: 'assets/aglaonema.jpg' }));
-  assert.match(html, /data-imagen="assets\/aglaonema.jpg"/);
-});
-
-test('sin imagen propia, usa la primera de la galería para el preview', () => {
-  const html = entryMarkup(
-    plantaCard({ galeria: ['assets/galeria-1.jpg', 'assets/galeria-2.jpg'] })
-  );
-  assert.match(html, /data-imagen="assets\/galeria-1.jpg"/);
+test('atributos faltantes se muestran como "—" en vez de vacíos o undefined', () => {
+  const html = filaTablaMarkup({ nombre: 'Pómez' });
+  assert.doesNotMatch(html, /undefined/);
+  assert.match(html, />—</);
 });
 
 test('Eliminar usa el uuid de la fila, no planta_id (permite ítems repetidos)', () => {
-  const html = entryMarkup(
+  const html = filaTablaMarkup(
     plantaCard({
       id: '11111111-1111-4111-8111-111111111111',
       planta_id: 'aglaonema::aglaonema commutatum::sombra',

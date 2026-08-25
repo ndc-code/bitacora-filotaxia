@@ -2,33 +2,49 @@ import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
 import { listarColeccion, quitarDeColeccion, onColeccionChange, limpiarCacheColeccion } from '../services/coleccion.js';
 import { listarTerrarios, eliminarTerrario } from '../services/terrarios.js';
-import { entryMarkup, idDeColeccion } from '../utils/coleccion-card.js';
+import { filaTablaMarkup, idDeColeccion, riegosDePlanta } from '../utils/coleccion-card.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
 import { wireTerrarioModal } from '../utils/terrario-modal.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
+import { wireRiegoEstacion, refreshRiegoEstacion } from '../utils/catalog-riego-estacion.js';
 import { iniciarPagina, mostrarErrorDePagina } from '../utils/guard.js';
 
 const TIPO_TITULO = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios Cerrados' };
+
+/**
+ * Header de tabla igual al de Index (mismo `--catalog-columns`, mismo toggle
+ * de estación), para que ambas páginas se vean y se comporten igual.
+ */
+function headerTablaMarkup() {
+  return `
+    <div class="catalog-row is-header" role="row">
+      <span>Nombre</span>
+      <span>Especie</span>
+      <span>Sol</span>
+      <span>Luminosidad</span>
+      <button type="button" class="catalog-riego-toggle" data-estacion="verano" aria-label="Riego en verano. Clic para cambiar estación">
+        Riego <span class="riego-estacion-label">(verano)</span>
+      </button>
+      <span>Clima</span>
+      <span>Suelo</span>
+      <span>Cuidado</span>
+      <span class="catalog-cell--action">Eliminar</span>
+    </div>
+  `;
+}
 
 function crearFilaItem(item) {
   const entry = document.createElement('div');
   entry.className = 'catalog-entry';
   entry.dataset.id = idDeColeccion(item);
   entry.dataset.nombre = item.nombre || '';
-  entry.innerHTML = entryMarkup(item);
+  entry.dataset.riego = item.riego || '—';
+  entry.dataset.riegos = JSON.stringify(riegosDePlanta(item));
+  entry.innerHTML = filaTablaMarkup(item);
   return entry;
-}
-
-function imagenDeGrupo(items) {
-  for (const item of items) {
-    const galeria = Array.isArray(item.galeria) ? item.galeria : [];
-    const imagen = item.imagen || galeria[0];
-    if (imagen) return imagen;
-  }
-  return '';
 }
 
 function crearGrupoTerrario({ terrario, items }) {
@@ -37,27 +53,33 @@ function crearGrupoTerrario({ terrario, items }) {
   const nombre = escapeHtml(terrario.nombre);
 
   section.innerHTML = `
-    <div class="coleccion-row">
-      <div class="coleccion-row-link" data-imagen="${escapeHtml(imagenDeGrupo(items))}">
-        <span class="coleccion-row-title">
-          <span class="coleccion-row-text">${nombre}</span>
-          <button
-            type="button"
-            class="coleccion-eliminar-btn coleccion-terrario-eliminar-btn"
-            data-terrario-id="${escapeHtml(terrario.id)}"
-            title="Eliminar terrario"
-            aria-label="Eliminar terrario ${nombre}"
-          >Eliminar</button>
-        </span>
-      </div>
+    <div class="coleccion-terrario-header">
+      <span class="coleccion-terrario-nombre">${nombre}</span>
+      <button
+        type="button"
+        class="coleccion-terrario-eliminar-btn"
+        data-terrario-id="${escapeHtml(terrario.id)}"
+        title="Eliminar terrario"
+        aria-label="Eliminar terrario ${nombre}"
+      >Eliminar terrario</button>
     </div>
-    <div class="coleccion-terrario-rows"></div>
   `;
 
-  const rows = qs('.coleccion-terrario-rows', section);
-  for (const item of items) {
-    rows.appendChild(crearFilaItem(item));
+  if (items.length === 0) {
+    const vacio = document.createElement('p');
+    vacio.className = 'coleccion-terrario-vacio';
+    vacio.textContent = 'Todavía no le agregaste nada a este terrario.';
+    section.appendChild(vacio);
+    return section;
   }
+
+  const tabla = document.createElement('div');
+  tabla.className = 'catalog-group-table';
+  tabla.innerHTML = headerTablaMarkup();
+  for (const item of items) {
+    tabla.appendChild(crearFilaItem(item));
+  }
+  section.appendChild(tabla);
 
   return section;
 }
@@ -114,48 +136,8 @@ async function render(root) {
   root.appendChild(crearSeccionTipo('abierto', porTipo.abierto));
   root.appendChild(crearSeccionTipo('cerrado', porTipo.cerrado));
 
-  mostrarPreviewInicial(root);
+  refreshRiegoEstacion(root);
   await syncColeccionNavCount();
-}
-
-function mostrarPreviewInicial(root) {
-  const preview = qs('#coleccion-preview');
-  const previewImg = qs('#coleccion-preview-img');
-  const primerLink = root.querySelector('.coleccion-row-link');
-  if (!preview || !previewImg || !primerLink) return;
-
-  const imagen = primerLink.dataset.imagen;
-  if (!imagen) return;
-
-  previewImg.src = imagen;
-  previewImg.alt = primerLink.querySelector('.coleccion-row-text')?.textContent || '';
-  preview.classList.add('is-visible');
-}
-
-function wirePreview(root) {
-  const preview = qs('#coleccion-preview');
-  const previewImg = qs('#coleccion-preview-img');
-  if (!root || !preview || !previewImg) return;
-
-  root.addEventListener('mouseover', (event) => {
-    const link = event.target.closest('.coleccion-row-link');
-    if (!link || !root.contains(link)) return;
-
-    const imagen = link.dataset.imagen;
-    if (!imagen) return;
-
-    previewImg.src = imagen;
-    previewImg.alt = link.querySelector('.coleccion-row-text')?.textContent || '';
-    preview.classList.add('is-visible');
-  });
-
-  root.addEventListener('mouseout', (event) => {
-    const link = event.target.closest('.coleccion-row-link');
-    if (!link || !root.contains(link)) return;
-    if (link.contains(event.relatedTarget)) return;
-
-    preview.classList.remove('is-visible');
-  });
 }
 
 function wireEliminar(root) {
@@ -296,7 +278,7 @@ function wireSidebarToggle() {
 
 const MENSAJE_SIN_SESION = 'Iniciá sesión para ver los ítems de tu colección.';
 const MENSAJE_SIN_TERRARIOS =
-  'Todavía no creaste ningún terrario. Agregá uno con "+ Nuevo terrario" o sumá algo desde Index.';
+  'Todavía no creaste ningún terrario. Agregá uno con el botón "+" o sumá algo desde Index.';
 
 const root = qs('#coleccion-rows');
 const authModal = wireAuthModal();
@@ -321,7 +303,7 @@ function montarChrome() {
   wireEliminarTerrario(root);
   wireNuevoTerrario(root, authModal, terrarioModal);
   wireSidebarToggle();
-  wirePreview(root);
+  wireRiegoEstacion(root, {});
 }
 
 function mostrarEstadoSinSesion() {
