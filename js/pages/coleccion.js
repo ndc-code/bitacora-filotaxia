@@ -195,12 +195,7 @@ function crearCopySplit(tipo) {
         ? `
           <p class="coleccion-split-label-texto">(Armado)</p>
           <ul class="coleccion-split-cuidados">
-            ${info.armado
-              .map(
-                (a) =>
-                  `<li>${escapeHtml(a.capa)}<br><span class="coleccion-split-armado-detalle">${escapeHtml(a.detalle)}</span></li>`
-              )
-              .join('')}
+            ${info.armado.map((a) => `<li>${escapeHtml(a.capa)} ${escapeHtml(a.detalle)}</li>`).join('')}
           </ul>
         `
         : ''
