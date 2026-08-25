@@ -9,7 +9,7 @@ import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
 import { iniciarPagina } from '../utils/guard.js';
 
-const TIPO_TITULO = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios Cerrados' };
+const TIPO_TITULO = { abierto: 'Abiertos', cerrado: 'Cerrados' };
 
 function imagenDeItem(item) {
   const galeria = Array.isArray(item.galeria) ? item.galeria : [];
