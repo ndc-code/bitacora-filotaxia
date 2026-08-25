@@ -20,7 +20,11 @@
     </p>
     <nav class="catalog-nav" aria-label="Principal">
       <a class="catalog-nav-link is-active" href="index.html">Index</a>
-      <a class="catalog-nav-link" href="coleccion.html" id="nav-coleccion">Terrarios</a>
+      <span class="catalog-nav-group">
+        <span class="catalog-nav-group-label">Terrarios</span>
+        <a class="catalog-nav-sublink" href="coleccion.html?tipo=abierto" id="nav-abiertos">Abiertos</a>
+        <a class="catalog-nav-sublink" href="coleccion.html?tipo=cerrado" id="nav-cerrados">Cerrados</a>
+      </span>
       <a class="catalog-nav-link" href="riegos.html" id="nav-riegos">Riegos</a>
     </nav>
     <button
@@ -65,7 +69,9 @@
     <p class="catalog-sidebar-label">(Navegación)</p>
     <nav class="catalog-sidebar-nav" aria-label="Principal">
       <a class="catalog-sidebar-link is-active" href="index.html">Index</a>
-      <a class="catalog-sidebar-link" href="coleccion.html" id="sidebar-nav-coleccion">Terrarios</a>
+      <span class="catalog-sidebar-group-label">Terrarios</span>
+      <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=abierto" id="sidebar-nav-abiertos">Abiertos</a>
+      <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=cerrado" id="sidebar-nav-cerrados">Cerrados</a>
       <a class="catalog-sidebar-link" href="riegos.html" id="sidebar-nav-riegos">Riegos</a>
     </nav>
     <p class="catalog-sidebar-datetime">Buenos Aires, ARG <time data-reloj>23:46</time></p>

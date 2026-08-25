@@ -18,7 +18,11 @@
     </p>
     <nav class="catalog-nav" aria-label="Principal">
       <a class="catalog-nav-link" href="index.html">Index</a>
-      <a class="catalog-nav-link is-active" href="coleccion.html">Terrarios</a>
+      <span class="catalog-nav-group">
+        <span class="catalog-nav-group-label">Terrarios</span>
+        <a class="catalog-nav-sublink" href="coleccion.html?tipo=abierto">Abiertos</a>
+        <a class="catalog-nav-sublink" href="coleccion.html?tipo=cerrado">Cerrados</a>
+      </span>
       <a class="catalog-nav-link" href="riegos.html">Riegos</a>
     </nav>
     <a class="bitacora-volver" href="coleccion.html">Volver</a>
@@ -49,7 +53,9 @@
     <p class="catalog-sidebar-label">(Navegación)</p>
     <nav class="catalog-sidebar-nav" aria-label="Principal">
       <a class="catalog-sidebar-link" href="index.html">Index</a>
-      <a class="catalog-sidebar-link is-active" href="coleccion.html">Terrarios</a>
+      <span class="catalog-sidebar-group-label">Terrarios</span>
+      <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=abierto">Abiertos</a>
+      <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=cerrado">Cerrados</a>
       <a class="catalog-sidebar-link" href="riegos.html">Riegos</a>
     </nav>
     <p class="catalog-sidebar-datetime">Buenos Aires, ARG <time data-reloj>23:46</time></p>

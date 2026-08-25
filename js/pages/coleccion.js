@@ -11,6 +11,31 @@ import { iniciarPagina } from '../utils/guard.js';
 
 const TIPO_TITULO = { abierto: 'Abiertos', cerrado: 'Cerrados' };
 
+const TIPO_INFO = {
+  abierto: {
+    descripcion:
+      'Terrarios sin tapa (o con ventilación), pensados para plantas que necesitan aire circulando y no toleran la humedad estancada.',
+    cuidados: [
+      'Riego moderado: dejá secar el sustrato entre riego y riego.',
+      'Luz indirecta intensa, varias horas por día.',
+      'Sustrato de drenaje rápido (arenoso), nunca encharcado.',
+      'Buena ventilación — evitá ubicarlo en un rincón sin aire.',
+    ],
+    plantas: 'Suculentas, haworthias, cactáceas chicas, tillandsias (clavel del aire).',
+  },
+  cerrado: {
+    descripcion:
+      'Terrarios con tapa: funcionan como un ecosistema autosostenido donde el agua se condensa y vuelve a caer, casi sin riego externo.',
+    cuidados: [
+      'Riego esporádico: el agua se recicla adentro, regá solo si ves el sustrato seco.',
+      'Luz indirecta suave — la luz directa sobrecalienta el ambiente cerrado.',
+      'Ventilá cada tanto si aparece condensación excesiva o moho.',
+      'Sustrato que retenga humedad (franco, con turba o musgo).',
+    ],
+    plantas: 'Musgos, helechos, fitonias, peperomias, selaginelas.',
+  },
+};
+
 function imagenDeTerrario(items) {
   for (const item of items) {
     const galeria = Array.isArray(item.galeria) ? item.galeria : [];
@@ -75,15 +100,87 @@ function crearSeccionTipo(tipo, grupos) {
   return section;
 }
 
+/**
+ * Fila de la lista de un tipo específico: una imagen más grande que el tile
+ * de la vista combinada, apiladas una debajo de la otra en una sola columna.
+ */
+function crearFilaSplit(terrario, items) {
+  const fila = document.createElement('a');
+  fila.className = 'coleccion-split-fila';
+  fila.href = `bitacora.html?id=${encodeURIComponent(terrario.id)}`;
+
+  const imagenDiv = document.createElement('div');
+  imagenDiv.className = 'coleccion-split-fila-imagen';
+  const imagen = imagenDeTerrario(items);
+  if (imagen) imagenDiv.style.backgroundImage = `url("${imagen}")`;
+  fila.appendChild(imagenDiv);
+
+  const nombre = document.createElement('span');
+  nombre.className = 'coleccion-split-fila-nombre';
+  nombre.textContent = terrario.nombre;
+  fila.appendChild(nombre);
+
+  return fila;
+}
+
+/**
+ * Columna sticky con info general del tipo de terrario (no de los terrarios
+ * puntuales del usuario): qué es, cómo cuidarlo, qué plantas le van bien.
+ */
+function crearCopySplit(tipo, cantidad) {
+  const info = TIPO_INFO[tipo];
+  const aside = document.createElement('aside');
+  aside.className = 'coleccion-split-copy';
+  aside.innerHTML = `
+    <h1 class="coleccion-split-titulo">${escapeHtml(TIPO_TITULO[tipo])}</h1>
+    <p class="coleccion-split-count">(${cantidad})</p>
+    <p class="coleccion-split-descripcion">${escapeHtml(info.descripcion)}</p>
+    <p class="coleccion-split-label">Cuidados</p>
+    <ul class="coleccion-split-cuidados">
+      ${info.cuidados.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}
+    </ul>
+    <p class="coleccion-split-label">Plantas típicas</p>
+    <p class="coleccion-split-descripcion">${escapeHtml(info.plantas)}</p>
+  `;
+  return aside;
+}
+
+function renderSplit(root, tipo, grupos) {
+  const split = document.createElement('div');
+  split.className = 'coleccion-split';
+
+  const lista = document.createElement('div');
+  lista.className = 'coleccion-split-lista';
+
+  if (grupos.length === 0) {
+    const vacio = document.createElement('p');
+    vacio.className = 'coleccion-tipo-vacio';
+    vacio.textContent = `Todavía no creaste ningún terrario ${tipo}.`;
+    lista.appendChild(vacio);
+  } else {
+    for (const { terrario, items } of grupos) {
+      lista.appendChild(crearFilaSplit(terrario, items));
+    }
+  }
+
+  split.appendChild(lista);
+  split.appendChild(crearCopySplit(tipo, grupos.length));
+  root.appendChild(split);
+}
+
+function marcarNavActivo(tipo) {
+  qsa('.catalog-nav-sublink, .catalog-sidebar-sublink').forEach((link) => {
+    const esDeEsteTipo = tipo && link.getAttribute('href')?.includes(`tipo=${tipo}`);
+    link.classList.toggle('is-active', Boolean(esDeEsteTipo));
+  });
+}
+
 async function render(root) {
   const vacio = qs('#mensaje-vacio');
   if (!root || !vacio) return;
 
   const [terrarios, items] = await Promise.all([listarTerrarios(), listarColeccion()]);
   root.innerHTML = '';
-
-  vacio.textContent = MENSAJE_SIN_TERRARIOS;
-  vacio.hidden = terrarios.length > 0;
 
   const itemsPorTerrario = new Map();
   for (const item of items) {
@@ -96,6 +193,19 @@ async function render(root) {
   for (const terrario of terrarios) {
     porTipo[terrario.tipo]?.push({ terrario, items: itemsPorTerrario.get(terrario.id) || [] });
   }
+
+  const tipoParam = new URLSearchParams(window.location.search).get('tipo');
+  marcarNavActivo(tipoParam);
+
+  if (tipoParam === 'abierto' || tipoParam === 'cerrado') {
+    vacio.hidden = true;
+    renderSplit(root, tipoParam, porTipo[tipoParam]);
+    await syncColeccionNavCount();
+    return;
+  }
+
+  vacio.textContent = MENSAJE_SIN_TERRARIOS;
+  vacio.hidden = terrarios.length > 0;
 
   root.appendChild(crearSeccionTipo('abierto', porTipo.abierto));
   root.appendChild(crearSeccionTipo('cerrado', porTipo.cerrado));
