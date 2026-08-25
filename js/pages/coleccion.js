@@ -23,7 +23,24 @@ const TIPO_INFO = {
       'Sustrato de drenaje rápido (arenoso), nunca encharcado.',
       'Buena ventilación — evitá ubicarlo en un rincón sin aire.',
     ],
-    plantas: 'Suculentas, haworthias, cactáceas chicas, tillandsias (clavel del aire).',
+    plantas: [
+      'Haworthia cebra', 'Haworthia rayada', 'Haworthia cooperi', 'Haworthia ventana',
+      'Haworthia retusa', 'Haworthia trunca', 'Haworthia limifolia', 'Haworthia perla',
+      'Haworthia reinwardtii', 'Haworthia venosa', 'Haworthia bolusii', 'Haworthia emelyae',
+      'Haworthia mirabilis', 'Haworthia maughanii', 'Haworthia pictada', 'Haworthia magnífica',
+      'Echeveria', 'Sedum burrito', 'Crasula ovata', 'Siempreviva', 'Elefantito',
+      'Rosario de bebé', 'Gasteria', 'Clavel del aire', 'Aloe mini', 'Kalanchoe', 'Lithops',
+      'Sansevieria mini', 'Echinocactus grusonii', 'Mammillaria', 'Opuntia microdasys',
+      'Aeonium arboreum', 'Graptopetalum', 'Pachyphytum', 'Sedeveria', 'Senecio serpens',
+      'Crassula perforata', 'Euphorbia obesa', 'Faucaria tigrina', 'Conophytum',
+      'Pleiospilos nelii', 'Titanopsis', 'Cotyledon orbiculata', 'Adromischus', 'Delosperma',
+      'Aptenia cordifolia', 'Portulacaria afra variegata', 'Aloe brevifolia',
+      'Sempervivum arachnoideum', 'Senecio radicans',
+    ],
+    plantasTop: [
+      'Aloe mini', 'Haworthia cebra', 'Echeveria', 'Sedum burrito', 'Crasula ovata',
+      'Lithops', 'Sansevieria mini', 'Gasteria', 'Kalanchoe', 'Clavel del aire',
+    ],
   },
   cerrado: {
     descripcion:
@@ -34,7 +51,24 @@ const TIPO_INFO = {
       'Ventilá cada tanto si aparece condensación excesiva o moho.',
       'Sustrato que retenga humedad (franco, con turba o musgo).',
     ],
-    plantas: 'Musgos, helechos, fitonias, peperomias, selaginelas.',
+    plantas: [
+      'Fitonia', 'Pilea', 'Peperomia sandía', 'Selaginela', 'Ficus enano', 'Singonio mini',
+      'Cryptanthus', 'Lágrimas de bebé', 'Culantrillo enano', 'Begonia mini', 'Marcgravia',
+      'Peperomia trepadora', 'Nephrolepis exaltata', 'Adiantum raddianum', 'Pteris ensiformis',
+      'Asplenium nidus', 'Pilea glauca', 'Peperomia rotundifolia', 'Fittonia verschaffeltii',
+      'Selaginella martensii', 'Begonia rex', 'Calathea orbifolia', 'Maranta leuconeura',
+      'Ficus pumila', 'Hemigraphis alternata', 'Episcia cupreata', 'Sinningia pusilla',
+      'Saintpaulia mini', 'Utricularia graminifolia', 'Drosera spatulata', 'Pinguicula',
+      'Sarracenia mini', 'Nepenthes mini', 'Anubias barteri', 'Bucephalandra',
+      'Microsorum pteropus', 'Riccia fluitans', 'Marchantia', 'Pellionia repens', 'Codonanthe',
+      'Columnea', 'Alocasia mini', 'Homalomena', 'Spathiphyllum mini',
+      'Chamaedorea elegans mini', 'Rhipsalis', 'Neoregelia mini', 'Guzmania mini',
+      'Tillandsia ionantha', 'Cryptanthus bromelioides',
+    ],
+    plantasTop: [
+      'Fitonia', 'Pilea', 'Peperomia sandía', 'Selaginela', 'Ficus enano', 'Singonio mini',
+      'Cryptanthus', 'Lágrimas de bebé', 'Culantrillo enano', 'Begonia mini',
+    ],
   },
 };
 
@@ -151,8 +185,12 @@ function crearCopySplit(tipo) {
     <ul class="coleccion-split-cuidados">
       ${info.cuidados.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}
     </ul>
-    <p class="coleccion-split-label-texto">(Plantas típicas)</p>
-    <p class="coleccion-split-descripcion">${escapeHtml(info.plantas)}</p>
+    <p class="coleccion-split-label-texto">(Plantas + usadas)</p>
+    <ul class="coleccion-split-cuidados">
+      ${info.plantasTop.map((p) => `<li>${escapeHtml(p)}</li>`).join('')}
+    </ul>
+    <p class="coleccion-split-label-texto">(Plantas usadas)</p>
+    <p class="coleccion-split-descripcion">${escapeHtml(info.plantas.join(', '))}</p>
   `;
   return aside;
 }

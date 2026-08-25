@@ -2952,7 +2952,7 @@ body.sidebar-open::before {
   letter-spacing: -3px;
   margin: 0;
   color: var(--color-ink);
-  margin-bottom: 10px;
+  margin-bottom: 30px;
 }
 
 .coleccion-split-descripcion {
