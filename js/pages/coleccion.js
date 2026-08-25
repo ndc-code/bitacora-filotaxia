@@ -15,8 +15,10 @@ const TIPO_TITULO_SPLIT = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios C
 
 const TIPO_INFO = {
   abierto: {
-    descripcion:
+    descripcion: [
       'Terrarios sin tapa (o con ventilación), pensados para plantas que necesitan aire circulando y no toleran la humedad estancada.',
+      'Como no hay drenaje hacia afuera ni recirculación cerrada del agua, hay que regar con cuidado y esperar a que las plantas absorban toda el agua antes de volver a regar — se riega cada bastante tiempo, no por calendario fijo. Este es el formato para cactus y suculentas, que necesitan que el sustrato se seque bien entre riego y riego.',
+    ],
     armado: [
       { capa: 'Capa 4: Grava decorativa', detalle: '300 ml' },
       {
@@ -52,8 +54,9 @@ const TIPO_INFO = {
     ],
   },
   cerrado: {
-    descripcion:
+    descripcion: [
       'Terrarios con tapa: funcionan como un ecosistema autosostenido donde el agua se condensa y vuelve a caer, casi sin riego externo.',
+    ],
     cuidados: [
       'Riego esporádico: el agua se recicla adentro, regá solo si ves el sustrato seco.',
       'Luz indirecta suave — la luz directa sobrecalienta el ambiente cerrado.',
@@ -189,7 +192,7 @@ function crearCopySplit(tipo) {
   aside.innerHTML = `
     <h1 class="coleccion-split-titulo">${escapeHtml(TIPO_TITULO_SPLIT[tipo])}</h1>
     <p class="coleccion-split-label-texto">(Concepto)</p>
-    <p class="coleccion-split-descripcion">${escapeHtml(info.descripcion)}</p>
+    ${info.descripcion.map((p) => `<p class="coleccion-split-descripcion">${escapeHtml(p)}</p>`).join('')}
     ${
       info.armado
         ? `
