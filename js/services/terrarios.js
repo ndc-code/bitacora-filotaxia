@@ -20,6 +20,25 @@ export async function listarTerrarios() {
   return data || [];
 }
 
+export async function obtenerTerrario(id) {
+  const session = await getSession();
+  if (!session?.user?.id) return null;
+
+  const { data, error } = await supabase
+    .from('terrarios')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', session.user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error obteniendo terrario:', error);
+    return null;
+  }
+
+  return data;
+}
+
 export async function crearTerrario({ nombre, tipo }) {
   const session = await getSession();
   if (!session?.user?.id) {

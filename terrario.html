@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terrario — Filotaxia</title>
+  <script>
+    try {
+      if (localStorage.getItem('tema') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="catalog-page catalog-page--coleccion catalog-page--terrario">
+  <header class="catalog-header">
+    <p class="catalog-header-left">
+      Todo lo que sumaste a este terrario, en un solo lugar.
+    </p>
+    <nav class="catalog-nav" aria-label="Principal">
+      <a class="catalog-nav-link" href="index.html">Index</a>
+      <a class="catalog-nav-link is-active" href="coleccion.html">Colección</a>
+      <a class="catalog-nav-link" href="riegos.html">Riegos</a>
+    </nav>
+    <a class="bitacora-volver" href="coleccion.html">Volver</a>
+    <button
+      type="button"
+      class="catalog-menu-toggle"
+      id="catalog-menu-toggle"
+      aria-expanded="false"
+      aria-controls="catalog-sidebar"
+    >
+      Menú
+    </button>
+    <div class="catalog-meta">
+      <p>
+        Buenos Aires, ARG <time data-reloj>23:46</time>
+        <span class="catalog-theme-toggle-sep" aria-hidden="true">·</span>
+        <button type="button" class="catalog-theme-toggle" data-theme-toggle aria-pressed="false">Noche</button>
+      </p>
+      <button type="button" class="catalog-auth-btn" data-auth-nav>Iniciar sesión</button>
+    </div>
+  </header>
+
+  <aside class="catalog-sidebar" id="catalog-sidebar" aria-label="Menú de navegación">
+    <div class="catalog-sidebar-top">
+      <button type="button" class="catalog-theme-toggle" data-theme-toggle aria-pressed="false">Noche</button>
+      <button type="button" class="catalog-sidebar-close" id="catalog-sidebar-close">Cerrar</button>
+    </div>
+    <p class="catalog-sidebar-label">(Navegación)</p>
+    <nav class="catalog-sidebar-nav" aria-label="Principal">
+      <a class="catalog-sidebar-link" href="index.html">Index</a>
+      <a class="catalog-sidebar-link is-active" href="coleccion.html">Colección</a>
+      <a class="catalog-sidebar-link" href="riegos.html">Riegos</a>
+    </nav>
+    <p class="catalog-sidebar-datetime">Buenos Aires, ARG <time data-reloj>23:46</time></p>
+    <button type="button" class="catalog-sidebar-auth-btn" data-auth-nav>Iniciar sesión</button>
+  </aside>
+
+  <p class="field-error" id="error-pagina" hidden></p>
+
+  <p id="mensaje-sesion" class="catalog-empty" hidden>
+    Iniciá sesión para ver este terrario.
+  </p>
+  <p id="mensaje-faltante" class="catalog-empty" hidden>
+    No encontramos ese terrario. <a href="coleccion.html">Volver a Colección</a>
+  </p>
+
+  <div id="terrario-contenido" hidden>
+    <header class="terrario-heading">
+      <h1 id="terrario-nombre"></h1>
+      <p class="terrario-tipo" id="terrario-tipo"></p>
+      <button type="button" class="terrario-eliminar-btn" id="btn-eliminar-terrario">Eliminar terrario</button>
+    </header>
+
+    <div class="terrario-grid" id="terrario-grid"></div>
+
+    <p class="coleccion-tipo-vacio" id="terrario-vacio" hidden>
+      Todavía no le agregaste nada a este terrario. Sumá algo desde Index.
+    </p>
+  </div>
+
+  <dialog id="dialog-auth" class="modal">
+    <button type="button" class="modal-close" aria-label="Cerrar">&times;</button>
+    <p class="field-error" id="error-pagina-auth" hidden></p>
+    <h2 id="titulo-form-auth">Iniciar sesión</h2>
+
+    <form id="form-auth">
+      <div class="field">
+        <label for="email-auth">Email</label>
+        <input class="input" type="email" id="email-auth" required />
+      </div>
+      <div class="field">
+        <label for="password-auth">Contraseña</label>
+        <input class="input" type="password" id="password-auth" minlength="6" required />
+      </div>
+      <p class="field-error" id="error-auth" hidden></p>
+      <p class="field-status" id="status-auth" hidden></p>
+      <button class="btn btn-primary" type="submit" id="btn-submit-auth">Iniciar sesión</button>
+    </form>
+
+    <p style="margin-top: var(--space-6);">
+      <button class="btn-secondary btn" type="button" id="btn-toggle-auth">¿No tenés cuenta? Creá una</button>
+    </p>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" src="js/pages/terrario.js"></script>
+</body>
+</html>

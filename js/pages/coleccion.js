@@ -1,87 +1,51 @@
 import { qs, qsa, escapeHtml } from '../utils/dom.js';
 import { getSession } from '../services/auth.js';
-import { listarColeccion, quitarDeColeccion, onColeccionChange, limpiarCacheColeccion } from '../services/coleccion.js';
-import { listarTerrarios, eliminarTerrario } from '../services/terrarios.js';
-import { filaTablaMarkup, idDeColeccion, riegosDePlanta } from '../utils/coleccion-card.js';
+import { listarColeccion, onColeccionChange } from '../services/coleccion.js';
+import { listarTerrarios } from '../services/terrarios.js';
 import { syncColeccionNavCount } from '../utils/coleccion-nav.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
 import { wireTerrarioModal } from '../utils/terrario-modal.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
-import { wireRiegoEstacion, refreshRiegoEstacion } from '../utils/catalog-riego-estacion.js';
-import { iniciarPagina, mostrarErrorDePagina } from '../utils/guard.js';
+import { iniciarPagina } from '../utils/guard.js';
 
 const TIPO_TITULO = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios Cerrados' };
 
+function imagenDeItem(item) {
+  const galeria = Array.isArray(item.galeria) ? item.galeria : [];
+  return item.imagen || galeria[0] || '';
+}
+
 /**
- * Header de tabla igual al de Index (mismo `--catalog-columns`, mismo toggle
- * de estación), para que ambas páginas se vean y se comporten igual.
+ * Un grupo por terrario: una "etiqueta" del mismo tamaño que un tile,
+ * seguida de un tile por ítem. Todos los grupos de una sección fluyen
+ * juntos en el mismo grid, como en la referencia de portfolio.
  */
-function headerTablaMarkup() {
-  return `
-    <div class="catalog-row is-header" role="row">
-      <span>Nombre</span>
-      <span>Especie</span>
-      <span>Sol</span>
-      <span>Luminosidad</span>
-      <button type="button" class="catalog-riego-toggle" data-estacion="verano" aria-label="Riego en verano. Clic para cambiar estación">
-        Riego <span class="riego-estacion-label">(verano)</span>
-      </button>
-      <span>Clima</span>
-      <span>Suelo</span>
-      <span>Cuidado</span>
-      <span class="catalog-cell--action">Eliminar</span>
-    </div>
-  `;
-}
+function crearGrupoTiles(terrario, items) {
+  const grupo = document.createElement('div');
+  grupo.className = 'coleccion-terrario-tiles';
+  grupo.dataset.terrarioId = terrario.id;
 
-function crearFilaItem(item) {
-  const entry = document.createElement('div');
-  entry.className = 'catalog-entry';
-  entry.dataset.id = idDeColeccion(item);
-  entry.dataset.nombre = item.nombre || '';
-  entry.dataset.riego = item.riego || '—';
-  entry.dataset.riegos = JSON.stringify(riegosDePlanta(item));
-  entry.innerHTML = filaTablaMarkup(item);
-  return entry;
-}
+  const href = `terrario.html?id=${encodeURIComponent(terrario.id)}`;
 
-function crearGrupoTerrario({ terrario, items }) {
-  const section = document.createElement('div');
-  section.className = 'coleccion-terrario-group';
-  const nombre = escapeHtml(terrario.nombre);
+  const label = document.createElement('a');
+  label.className = 'coleccion-terrario-tiles-label';
+  label.href = href;
+  label.innerHTML = `<span>${escapeHtml(terrario.nombre)}</span>`;
+  grupo.appendChild(label);
 
-  section.innerHTML = `
-    <div class="coleccion-terrario-header">
-      <span class="coleccion-terrario-nombre">${nombre}</span>
-      <button
-        type="button"
-        class="coleccion-terrario-eliminar-btn"
-        data-terrario-id="${escapeHtml(terrario.id)}"
-        title="Eliminar terrario"
-        aria-label="Eliminar terrario ${nombre}"
-      >Eliminar terrario</button>
-    </div>
-  `;
-
-  if (items.length === 0) {
-    const vacio = document.createElement('p');
-    vacio.className = 'coleccion-terrario-vacio';
-    vacio.textContent = 'Todavía no le agregaste nada a este terrario.';
-    section.appendChild(vacio);
-    return section;
-  }
-
-  const tabla = document.createElement('div');
-  tabla.className = 'catalog-group-table';
-  tabla.innerHTML = headerTablaMarkup();
   for (const item of items) {
-    tabla.appendChild(crearFilaItem(item));
+    const tile = document.createElement('a');
+    tile.className = 'coleccion-tile';
+    tile.href = href;
+    tile.title = item.nombre || '';
+    const imagen = imagenDeItem(item);
+    if (imagen) tile.style.backgroundImage = `url("${imagen}")`;
+    grupo.appendChild(tile);
   }
-  section.appendChild(tabla);
 
-  return section;
+  return grupo;
 }
 
 function crearSeccionTipo(tipo, grupos) {
@@ -101,12 +65,12 @@ function crearSeccionTipo(tipo, grupos) {
     return section;
   }
 
-  const lista = document.createElement('div');
-  lista.className = 'coleccion-tipo-lista';
-  for (const grupo of grupos) {
-    lista.appendChild(crearGrupoTerrario(grupo));
+  const grid = document.createElement('div');
+  grid.className = 'coleccion-grid';
+  for (const { terrario, items } of grupos) {
+    grid.appendChild(crearGrupoTiles(terrario, items));
   }
-  section.appendChild(lista);
+  section.appendChild(grid);
 
   return section;
 }
@@ -136,82 +100,34 @@ async function render(root) {
   root.appendChild(crearSeccionTipo('abierto', porTipo.abierto));
   root.appendChild(crearSeccionTipo('cerrado', porTipo.cerrado));
 
-  refreshRiegoEstacion(root);
   await syncColeccionNavCount();
 }
 
-function wireEliminar(root) {
+/**
+ * Al pasar el mouse por el grupo de tiles de un terrario, el resto se atenúa
+ * — así queda claro qué imágenes pertenecen a cuál terrario sin necesidad de
+ * separadores visuales pesados entre ellos.
+ */
+function wireHoverAislado(root) {
   if (!root) return;
 
-  root.addEventListener('click', async (event) => {
-    const btn = event.target.closest('.coleccion-eliminar-btn');
-    if (!btn || !root.contains(btn)) return;
+  root.addEventListener('mouseover', (event) => {
+    const grupo = event.target.closest('.coleccion-terrario-tiles');
+    if (!grupo || !root.contains(grupo)) return;
 
-    event.preventDefault();
-    event.stopPropagation();
-
-    const id = btn.dataset.id;
-    if (!id) return;
-    if (btn.disabled) return;
-
-    btn.disabled = true;
-    const textoOriginal = btn.textContent;
-    btn.textContent = 'Eliminando…';
-
-    try {
-      const result = await quitarDeColeccion(id);
-
-      if (result.ok || result.reason === 'missing') {
-        await render(root);
-        return;
-      }
-
-      btn.disabled = false;
-      btn.textContent = textoOriginal;
-      mostrarErrorDePagina(
-        result.reason === 'not_authenticated'
-          ? 'Iniciá sesión de nuevo para editar tu colección.'
-          : 'No pudimos eliminar el ítem de tu colección. Probá otra vez.'
-      );
-    } catch (error) {
-      console.error('Error eliminando de la colección', error);
-      btn.disabled = false;
-      btn.textContent = textoOriginal;
-      mostrarErrorDePagina('No pudimos eliminar el ítem de tu colección. Probá otra vez.');
-    }
+    root.classList.add('has-hover');
+    qsa('.coleccion-terrario-tiles', root).forEach((g) => {
+      g.classList.toggle('is-active', g === grupo);
+    });
   });
-}
 
-function wireEliminarTerrario(root) {
-  if (!root) return;
+  root.addEventListener('mouseout', (event) => {
+    const grupo = event.target.closest('.coleccion-terrario-tiles');
+    if (!grupo || !root.contains(grupo)) return;
+    if (grupo.contains(event.relatedTarget)) return;
 
-  root.addEventListener('click', async (event) => {
-    const btn = event.target.closest('.coleccion-terrario-eliminar-btn');
-    if (!btn || !root.contains(btn)) return;
-
-    const terrarioId = btn.dataset.terrarioId;
-    if (!terrarioId) return;
-
-    const grupo = btn.closest('.coleccion-terrario-group');
-    const cantidad = qsa('.catalog-entry', grupo).length;
-    const confirmado = window.confirm(
-      cantidad > 0
-        ? `¿Eliminar este terrario y sus ${cantidad} ítems? No se puede deshacer.`
-        : '¿Eliminar este terrario? No se puede deshacer.'
-    );
-    if (!confirmado) return;
-
-    btn.disabled = true;
-    const result = await eliminarTerrario(terrarioId);
-
-    if (result.ok) {
-      limpiarCacheColeccion();
-      await render(root);
-      return;
-    }
-
-    btn.disabled = false;
-    mostrarErrorDePagina('No pudimos eliminar el terrario. Probá otra vez.');
+    root.classList.remove('has-hover');
+    qsa('.coleccion-terrario-tiles', root).forEach((g) => g.classList.remove('is-active'));
   });
 }
 
@@ -299,11 +215,9 @@ function abrirLogin() {
 function montarChrome() {
   wireReloj();
   wireThemeToggle();
-  wireEliminar(root);
-  wireEliminarTerrario(root);
   wireNuevoTerrario(root, authModal, terrarioModal);
   wireSidebarToggle();
-  wireRiegoEstacion(root, {});
+  wireHoverAislado(root);
 }
 
 function mostrarEstadoSinSesion() {
