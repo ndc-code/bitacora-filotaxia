@@ -11,6 +11,7 @@ import { wireThemeToggle } from '../utils/theme.js';
 import { iniciarPagina } from '../utils/guard.js';
 
 const TIPO_TITULO = { abierto: 'Abiertos', cerrado: 'Cerrados' };
+const TIPO_TITULO_SPLIT = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios Cerrados' };
 
 const TIPO_INFO = {
   abierto: {
@@ -143,7 +144,7 @@ function crearCopySplit(tipo, cantidad) {
   const aside = document.createElement('aside');
   aside.className = 'coleccion-split-copy';
   aside.innerHTML = `
-    <h1 class="coleccion-split-titulo">${escapeHtml(TIPO_TITULO[tipo])}</h1>
+    <h1 class="coleccion-split-titulo">${escapeHtml(TIPO_TITULO_SPLIT[tipo])}</h1>
     <p class="coleccion-split-count">(${cantidad})</p>
     <p class="coleccion-split-descripcion">${escapeHtml(info.descripcion)}</p>
     <p class="coleccion-split-label">Cuidados</p>
