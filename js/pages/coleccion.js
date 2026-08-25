@@ -17,6 +17,15 @@ const TIPO_INFO = {
   abierto: {
     descripcion:
       'Terrarios sin tapa (o con ventilación), pensados para plantas que necesitan aire circulando y no toleran la humedad estancada.',
+    armado: [
+      { capa: 'Capa 4: Grava decorativa', detalle: '300 ml' },
+      {
+        capa: 'Capa 3: Sustrato',
+        detalle: '700 ml tierra cactus + 200 ml arena gruesa + 200 ml perlita + 100 ml piedra pómez chica',
+      },
+      { capa: 'Capa 2: Rejilla separadora', detalle: '1 unidad, metálica' },
+      { capa: 'Capa 1: Base drenante', detalle: '1,5 L piedra pómez + 1 cdta carbón activado' },
+    ],
     cuidados: [
       'Riego moderado: dejá secar el sustrato entre riego y riego.',
       'Luz indirecta intensa, varias horas por día.',
@@ -181,6 +190,21 @@ function crearCopySplit(tipo) {
     <h1 class="coleccion-split-titulo">${escapeHtml(TIPO_TITULO_SPLIT[tipo])}</h1>
     <p class="coleccion-split-label-texto">(Concepto)</p>
     <p class="coleccion-split-descripcion">${escapeHtml(info.descripcion)}</p>
+    ${
+      info.armado
+        ? `
+          <p class="coleccion-split-label-texto">(Armado)</p>
+          <ul class="coleccion-split-cuidados">
+            ${info.armado
+              .map(
+                (a) =>
+                  `<li>${escapeHtml(a.capa)}<br><span class="coleccion-split-armado-detalle">${escapeHtml(a.detalle)}</span></li>`
+              )
+              .join('')}
+          </ul>
+        `
+        : ''
+    }
     <p class="coleccion-split-label-texto">(Cuidados)</p>
     <ul class="coleccion-split-cuidados">
       ${info.cuidados.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}

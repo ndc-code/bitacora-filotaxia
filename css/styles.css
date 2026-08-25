@@ -2983,6 +2983,15 @@ body.sidebar-open::before {
   content: '_ ';
 }
 
+.coleccion-split-cuidados li {
+  margin-bottom: var(--space-2);
+}
+
+.coleccion-split-armado-detalle {
+  color: var(--color-gray-mid);
+  font-size: 13px;
+}
+
 @media (max-width: 799px) {
   .coleccion-split {
     flex-direction: column;
