@@ -2183,6 +2183,10 @@ body.sidebar-open::before {
   padding-bottom: var(--space-15);
 }
 
+.bitacora-layout[hidden] {
+  display: none;
+}
+
 .bitacora-main {
   min-width: 0;
 }
