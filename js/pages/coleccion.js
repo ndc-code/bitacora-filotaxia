@@ -145,6 +145,7 @@ function crearCopySplit(tipo) {
   aside.className = 'coleccion-split-copy';
   aside.innerHTML = `
     <h1 class="coleccion-split-titulo">${escapeHtml(TIPO_TITULO_SPLIT[tipo])}</h1>
+    <p class="coleccion-split-label-texto">(Concepto)</p>
     <p class="coleccion-split-descripcion">${escapeHtml(info.descripcion)}</p>
     <p class="coleccion-split-label-texto">(Cuidados)</p>
     <ul class="coleccion-split-cuidados">
