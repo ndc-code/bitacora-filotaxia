@@ -28,19 +28,61 @@
 }
 
 /*
- * Modo noche: se invierte el par ink/canvas (negro casi puro de fondo,
- * blanco de texto) y se reajustan los grises que dependen de contraste
- * contra el fondo. `<html data-theme>` lo pone el script inline del
- * `<head>` de cada página antes del primer paint (ver wireThemeToggle en
- * js/utils/theme.js).
+ * Día -> Atardecer -> Noche (ciclado por wireThemeToggle en
+ * js/utils/theme.js; `<html data-theme>` lo pone el script inline del
+ * `<head>` de cada página antes del primer paint). Sin estación elegida (o
+ * después de "Reset" en el ciclo de estaciones): Día y Atardecer se ven
+ * igual (blanco de fondo, negro de texto, los mismos de `:root`) y Noche los
+ * invierte del todo (negro de fondo, blanco de texto).
  */
 :root[data-theme='dark'] {
   --color-ink: #ffffff;
-  --color-canvas: #141413;
+  --color-canvas: #000000;
   --color-border: #3d3d3d;
   --color-charcoal: #cccccc;
   --color-gray-mid: #9e9e9e;
   --color-placeholder: #808080;
+}
+
+/*
+ * Tema por estación (inspirado en bergerfohr.com): tocar la estación en el
+ * sidebar la va ciclando (Invierno -> Primavera -> Verano -> Otoño -> ...) y
+ * tiñe el sitio con su color, distinto según el momento del día:
+ * - Día: fondo blanco, todo lo demás del color de la estación.
+ * - Atardecer: fondo del color de la estación, todo lo demás blanco.
+ * - Noche: fondo negro, todo lo demás del color de la estación.
+ * Sin elegir ninguna todavía, el sitio queda en blanco/negro de siempre (ver
+ * wireSeasonTheme).
+ */
+:root[data-season='invierno'] {
+  --color-estacion: #3c6ef6;
+}
+
+:root[data-season='primavera'] {
+  --color-estacion: #21c55e;
+}
+
+:root[data-season='verano'] {
+  --color-estacion: #facc14;
+}
+
+:root[data-season='otono'] {
+  --color-estacion: #e8412e;
+}
+
+:root[data-season]:not([data-theme='dusk']):not([data-theme='dark']) {
+  --color-ink: var(--color-estacion);
+  --color-canvas: #ffffff;
+}
+
+:root[data-theme='dusk'][data-season] {
+  --color-ink: #ffffff;
+  --color-canvas: var(--color-estacion);
+}
+
+:root[data-theme='dark'][data-season] {
+  --color-ink: var(--color-estacion);
+  --color-canvas: #000000;
 }
 
 * {
@@ -454,10 +496,29 @@ select.input {
 
 .catalog-sidebar-group-label {
   display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
   color: var(--color-canvas);
-  opacity: 0.6;
+  opacity: 0.9;
   font-family: var(--font-heading);
-  font-size: 24px;
+  font-size: clamp(36px, 9vw, 64px);
+  font-weight: 400;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.catalog-sidebar-group-label[aria-expanded='true'] {
+  opacity: 1;
+}
+
+.catalog-sidebar-group:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .catalog-sidebar-sublink {
@@ -465,8 +526,16 @@ select.input {
   opacity: 0.85;
 }
 
-.catalog-filters-toggle {
+.catalog-filters-group {
   grid-column: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  justify-self: start;
+}
+
+.catalog-filters-toggle {
   display: inline-flex;
   align-items: center;
   margin: 0;
@@ -479,7 +548,6 @@ select.input {
   line-height: 1;
   color: var(--color-ink);
   cursor: pointer;
-  justify-self: start;
 }
 
 .catalog-meta {
@@ -487,7 +555,7 @@ select.input {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--space-3);
+  gap: var(--space-2);
   text-align: right;
   color: var(--color-ink);
   justify-self: end;
@@ -540,8 +608,7 @@ select.input {
 .catalog-view-switch {
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
-  margin-top: -4px;
+  gap: 3px;
 }
 
 .catalog-view-btn {
@@ -557,13 +624,16 @@ select.input {
   cursor: pointer;
 }
 
-.catalog-view-btn.is-active {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 .catalog-view-sep {
   opacity: 0.45;
+}
+
+.catalog-filters-footer {
+  grid-column: 8;
+  align-self: end;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
 }
 
 .catalog-search {
@@ -572,8 +642,7 @@ select.input {
   margin: 0;
   margin-bottom: var(--space-1);
   margin-left: -20px;
-  grid-column: 8;
-  align-self: end;
+  flex: 1;
 }
 
 .catalog-search input {
@@ -649,6 +718,12 @@ select.input {
   background: var(--color-canvas);
   box-shadow: none;
   box-sizing: border-box;
+}
+
+/* Solo se ve en el modal de mobile: en desktop el mismo botón "Filtros" ya
+   cierra el panel. */
+.catalog-filters-close {
+  display: none;
 }
 
 .catalog-filters-options {
@@ -1239,7 +1314,7 @@ select.input {
 /* Solo mobile/touch: en desktop el panel de detalle queda como antes (sin
    fondo propio), el atenuado por hover ya distingue el estado abierto. Acá
    se invierte respecto al tema de la página (igual que el sidebar): negro
-   sobre blanco en modo claro, blanco sobre #141413 en modo oscuro. Los hijos
+   sobre blanco en modo claro, blanco sobre negro en modo oscuro. Los hijos
    con color propio (dt/dd, figcaption, el borde de cada fila) se pisan
    explícitamente porque una regla con selector propio nunca hereda, sin
    importar la especificidad. */
@@ -1410,27 +1485,6 @@ select.input {
     justify-self: start;
   }
 
-  .catalog-filters {
-    padding: 0 var(--space-4) var(--space-6);
-  }
-
-  .catalog-filters-panel {
-    grid-template-columns: 1fr;
-    row-gap: var(--space-4);
-  }
-
-  .catalog-filters-options {
-    grid-column: 1;
-    column-count: 2;
-    column-gap: 16px;
-  }
-
-  .catalog-search {
-    grid-column: 1;
-    max-width: 16rem;
-    margin-left: 0;
-  }
-
   .catalog-list {
     padding: 0 var(--space-4) var(--space-10);
     overflow-x: auto;
@@ -1470,10 +1524,6 @@ select.input {
 }
 
 @media (max-width: 799px) {
-  .catalog-filters-options {
-    column-count: 3;
-  }
-
   .catalog-page[data-view='2'] .catalog-rows {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -1497,8 +1547,8 @@ select.input {
   }
 
   .catalog-category-label {
-    font-size: 34px;
-    letter-spacing: -1.5px;
+    font-size: 44px;
+    letter-spacing: -2px;
   }
 
   .catalog-category-count {
@@ -1514,8 +1564,8 @@ select.input {
 
 @media (max-width: 379px) {
   .catalog-category-label {
-    font-size: 26px;
-    letter-spacing: -1px;
+    font-size: 34px;
+    letter-spacing: -1.5px;
   }
 
   .riegos-section-title {
@@ -1739,8 +1789,6 @@ select.input {
 /* Menu toggle and sidebar for tablets/mobile (≤1024px) */
 .catalog-menu-toggle {
   display: none;
-  grid-column: 6;
-  align-items: center;
   margin: 0;
   padding: 0;
   border: 0;
@@ -1751,7 +1799,12 @@ select.input {
   line-height: 1;
   color: var(--color-ink);
   cursor: pointer;
-  justify-self: start;
+}
+
+/* Oculto por defecto, como el propio botón "Menú": ambos viven juntos y solo
+   se ven en mobile/tablet (≤1024px). */
+.catalog-menu-group {
+  display: none;
 }
 
 .catalog-sidebar {
@@ -1781,8 +1834,13 @@ select.input {
   margin-bottom: clamp(var(--space-10), 12vh, 120px);
 }
 
-.catalog-sidebar-top .catalog-theme-toggle {
-  font-size: 16px;
+.catalog-sidebar-mode {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-canvas);
+  font-size: inherit;
 }
 
 .catalog-sidebar-close {
@@ -1792,7 +1850,7 @@ select.input {
   background: transparent;
   color: var(--color-canvas);
   font-family: inherit;
-  font-size: 16px;
+  font-size: inherit;
   line-height: 1;
   cursor: pointer;
 }
@@ -1800,13 +1858,6 @@ select.input {
 .catalog-sidebar-label {
   margin: 0 0 var(--space-6);
   font-size: 16px;
-  color: var(--color-canvas);
-  opacity: 0.6;
-}
-
-.catalog-sidebar-datetime {
-  margin: 300px 0 0;
-  font-size: 14px;
   color: var(--color-canvas);
   opacity: 0.6;
 }
@@ -1834,7 +1885,7 @@ select.input {
 .catalog-sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-1);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1844,7 +1895,7 @@ select.input {
   display: block;
   padding: 0;
   color: var(--color-canvas);
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 8px;
   font-family: var(--font-heading);
   font-size: clamp(36px, 9vw, 64px);
@@ -1854,6 +1905,8 @@ select.input {
 }
 
 .catalog-sidebar-link.is-active {
+  margin-bottom: 5px;
+  text-decoration: underline;
   opacity: 1;
 }
 
@@ -1894,13 +1947,37 @@ select.input {
 
   .catalog-header-left {
     grid-area: desc;
+    align-self: start;
     text-wrap: balance;
   }
 
-  .catalog-menu-toggle {
+  /* En mobile "1 / 2 / 3" tiene que quedar pegado a "Menú" (no a "Filtros"
+     como en desktop), así que acá vive en su propio grupo flex-column junto
+     al botón de menú — ver el `.catalog-view-switch` duplicado dentro de
+     `.catalog-menu-group` en el HTML. Agruparlos así evita que la altura de
+     la fila 1 (que estira el párrafo de descripción) empuje el switch lejos
+     de "Menú". */
+  .catalog-menu-group {
     grid-area: menu;
     align-self: start;
     justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2);
+  }
+
+  /* En desktop "Filtros" y el switch de vista viven juntos en una columna
+     (`.catalog-filters-group`); acá cada uno vuelve a ser su propio ítem del
+     grid para poder ubicarse en áreas distintas ('filters' vs 'views'). */
+  .catalog-filters-group {
+    display: contents;
+  }
+
+  /* La instancia de desktop (agrupada con Filtros) se esconde en mobile: la
+     que se ve es la de `.catalog-menu-group`. */
+  .catalog-filters-group .catalog-view-switch {
+    display: none;
   }
 
   .catalog-filters-toggle {
@@ -1924,10 +2001,96 @@ select.input {
     display: none;
   }
 
-  .catalog-view-switch {
-    grid-area: views;
-    justify-self: end;
-    margin-top: -30px;
+  .catalog-list {
+    margin-top: var(--space-6);
+  }
+
+  .catalog-category {
+    margin-top: var(--space-8);
+  }
+}
+
+/* En mobile los filtros se ven como un modal: fondo oscuro de pantalla
+   completa con el panel centrado, en vez del panel que se abría pegado
+   al header empujando el contenido. */
+@media (max-width: 1023px) {
+  .catalog-filters:not([hidden]) {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0;
+    padding: var(--space-8) var(--space-4);
+    background: rgba(31, 46, 61, 0.5);
+    overflow-y: auto;
+  }
+
+  .catalog-filters.is-collapsed {
+    padding-bottom: var(--space-8);
+  }
+
+  .catalog-filters-panel {
+    grid-template-columns: 1fr;
+    row-gap: var(--space-4);
+    width: 100%;
+    max-width: 420px;
+    margin: auto 0;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  }
+
+  .catalog-filters-options {
+    grid-column: 1;
+    column-count: 3;
+    column-gap: 16px;
+  }
+
+  .catalog-filters-footer {
+    grid-column: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+  }
+
+  .catalog-search {
+    max-width: 16rem;
+    margin-left: 0;
+  }
+
+  .catalog-filters-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin: 0 0 var(--space-1) auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink);
+    font-family: inherit;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .catalog-filters-close:hover {
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 420px) {
+  .catalog-filter-option {
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .catalog-filter-option input[type='checkbox'] {
+    width: 9px;
+    height: 9px;
   }
 }
 
@@ -2027,14 +2190,8 @@ body.sidebar-open::before {
     grid-template-columns: 3.1fr 1fr 1fr;
   }
 
-  .catalog-header {        
-    grid-template-areas:
-      'desc filters menu'
-      'views views views';
-  }
-
-  .catalog-view-switch {
-    margin-top: -80px;
+  .catalog-header {
+    grid-template-areas: 'desc filters menu';
   }
 }
 
@@ -2067,10 +2224,6 @@ body.sidebar-open::before {
     display: inline;
   }
 
-  .catalog-view-switch {
-    margin-top: -5px;
-  }
-
   .catalog-filters-toggle,
   .catalog-view-switch {
     font-size: 14px;    
@@ -2086,10 +2239,8 @@ body.sidebar-open::before {
 
   .catalog-header {
     grid-template-columns: 3fr 1fr 1fr;
-    grid-template-areas:
-      'desc filters menu'
-      'views views views';
-      padding-inline: 15px;
+    grid-template-areas: 'desc filters menu';
+    padding-inline: 15px;
   }
 
   /* Luminosidad (4), Riego (5) y Clima (6) */
@@ -2120,18 +2271,34 @@ body.sidebar-open::before {
     font-size: 13px;
   }
 
-  .catalog-filters {
-    margin-top: 20px;
-    padding-bottom: 0;
-  }
-
   .catalog-filters-toggle,
   .catalog-view-switch {
     font-size: 13px;
   }
 
-  .catalog-menu-toggle {
+  .catalog-menu-toggle,
+  .catalog-sidebar-close,
+  .catalog-sidebar-mode {
     font-size: 13px;
+  }
+
+  /* La hora ya no entra junto a "Noche / Invierno" en una fila: pasa a su
+     propia línea, arriba (con `order`, sin mover el HTML) y sin el "/" que
+     tenía cuando iba después. */
+  .catalog-sidebar-mode {
+    flex-wrap: wrap;
+  }
+
+  .catalog-sidebar-mode time {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  /* Con la hora arriba, `.catalog-sidebar-mode` pasa a ocupar 2 líneas: sin
+     esto "Cerrar" quedaba centrado contra ese bloque más alto en vez de
+     pegado arriba de todo. */
+  .catalog-sidebar-close {
+    align-self: flex-start;
   }
 
 }

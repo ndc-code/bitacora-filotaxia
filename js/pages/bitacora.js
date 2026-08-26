@@ -22,7 +22,9 @@ import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
+import { wireSeasonTheme } from '../utils/catalog-season-theme.js';
 import { iniciarPagina, mostrarErrorDePagina } from '../utils/guard.js';
+import { wireSidebarAccordion } from '../utils/catalog-sidebar-accordion.js';
 
 const ETIQUETAS_TIPO = {
   regar: 'Regar',
@@ -668,7 +670,9 @@ const authNav = wireAuthNav({
 iniciarPagina(async function init() {
   wireReloj();
   wireThemeToggle();
+  wireSeasonTheme();
   wireSidebarToggle();
+  wireSidebarAccordion();
   await authNav.sync();
   await syncColeccionNavCount();
 

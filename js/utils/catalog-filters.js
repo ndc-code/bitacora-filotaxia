@@ -92,15 +92,30 @@ export function wireFiltersToggle() {
   const section = qs('.catalog-filters');
   const toggle = qs('#catalog-filters-toggle');
   const panel = qs('#catalog-filters');
+  const closeBtn = qs('#catalog-filters-close');
   if (!section || !toggle || !panel) return;
 
-  toggle.addEventListener('click', () => {
-    const open = toggle.getAttribute('aria-expanded') === 'true';
-    const nextOpen = !open;
+  const setOpen = (nextOpen) => {
     toggle.setAttribute('aria-expanded', String(nextOpen));
     section.classList.toggle('is-collapsed', !nextOpen);
     section.hidden = !nextOpen;
     panel.hidden = !nextOpen;
+  };
+
+  toggle.addEventListener('click', () => {
+    setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+  });
+
+  closeBtn?.addEventListener('click', () => setOpen(false));
+
+  // En mobile el panel se ve como modal: clic en el fondo (fuera del panel) o
+  // Escape lo cierran, igual que los demás modales del sitio.
+  section.addEventListener('click', (event) => {
+    if (event.target === section) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') setOpen(false);
   });
 }
 

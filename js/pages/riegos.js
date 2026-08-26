@@ -9,7 +9,9 @@ import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
+import { wireSeasonTheme } from '../utils/catalog-season-theme.js';
 import { iniciarPagina } from '../utils/guard.js';
+import { wireSidebarAccordion } from '../utils/catalog-sidebar-accordion.js';
 
 function ultimoRiegoDe(eventos) {
   return eventos.find((evento) => evento.tipo === 'regar') ?? null;
@@ -139,7 +141,9 @@ iniciarPagina(async function init() {
   qs('#riegos-contenido').hidden = false;
   wireReloj();
   wireThemeToggle();
+  wireSeasonTheme();
   wireSidebarToggle();
+  wireSidebarAccordion();
   await authNav.sync();
 
   if (await getSession()) {

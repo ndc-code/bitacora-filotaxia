@@ -21,10 +21,17 @@ function applyView(page, view, gallery3d) {
   }
 }
 
+/**
+ * Hay dos `.catalog-view-switch` en el DOM (uno junto a "Filtros" para
+ * desktop, otro junto a "Menú" para mobile — CSS muestra solo el que
+ * corresponde al breakpoint), así que hay que mantenerlos sincronizados: un
+ * click en cualquiera de los dos actualiza la vista y refleja el estado en
+ * ambos.
+ */
 export function wireCatalogView({ onGallery3DSeleccion } = {}) {
   const page = qs('.catalog-page');
-  const switcher = qs('.catalog-view-switch');
-  if (!page || !switcher) return;
+  const switchers = qsa('.catalog-view-switch');
+  if (!page || !switchers.length) return;
 
   const gallery3d = wireCatalogGallery3D({ onSeleccion: onGallery3DSeleccion });
 
@@ -37,19 +44,25 @@ export function wireCatalogView({ onGallery3DSeleccion } = {}) {
   }
 
   applyView(page, initial, gallery3d);
-  setActiveButtons(switcher, initial);
+  switchers.forEach((switcher) => setActiveButtons(switcher, initial));
 
-  switcher.addEventListener('click', (event) => {
-    const btn = event.target.closest('.catalog-view-btn');
-    if (!btn || !switcher.contains(btn)) return;
-    const view = btn.dataset.view;
-    if (!view) return;
+  function seleccionarVista(view) {
     applyView(page, view, gallery3d);
-    setActiveButtons(switcher, view);
+    switchers.forEach((switcher) => setActiveButtons(switcher, view));
     try {
       localStorage.setItem(STORAGE_KEY, view);
     } catch {
       /* ignore */
     }
+  }
+
+  switchers.forEach((switcher) => {
+    switcher.addEventListener('click', (event) => {
+      const btn = event.target.closest('.catalog-view-btn');
+      if (!btn || !switcher.contains(btn)) return;
+      const view = btn.dataset.view;
+      if (!view) return;
+      seleccionarVista(view);
+    });
   });
 }

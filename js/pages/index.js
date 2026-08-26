@@ -11,7 +11,9 @@ import { refreshCatalogFilters } from '../utils/catalog-filters.js';
 import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
+import { wireSeasonTheme } from '../utils/catalog-season-theme.js';
 import { wireTerrarioModal } from '../utils/terrario-modal.js';
+import { wireSidebarAccordion } from '../utils/catalog-sidebar-accordion.js';
 
 function parseGaleria(raw) {
   if (!raw) return [];
@@ -190,6 +192,7 @@ const authModal = wireAuthModal();
 const terrarioModal = wireTerrarioModal();
 wireReloj();
 wireThemeToggle();
+wireSeasonTheme();
 wireCatalogAccordion(root);
 wireAdd(catalogList, authModal, terrarioModal);
 wireEntryClickToAdd(catalogList, authModal, terrarioModal);
@@ -202,6 +205,7 @@ wireGatedNavLink('#sidebar-nav-riegos', authModal, { closeSidebarFirst: true });
 wireCatalogFilters(root);
 wireFiltersToggle();
 wireSidebarToggle();
+wireSidebarAccordion();
 wireCatalogView({});
 wireRiegoEstacion(root, {
   onChange: () => refreshCatalogFilters(root),

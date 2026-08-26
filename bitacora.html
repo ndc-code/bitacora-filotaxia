@@ -6,7 +6,7 @@
   <title>Bitácora — Filotaxia</title>
   <script>
     try {
-      if (localStorage.getItem('tema') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      var t = localStorage.getItem('tema'); if (t === 'dark' || t === 'dusk') document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
   </script>
   <link rel="stylesheet" href="css/styles.css" />
@@ -36,8 +36,9 @@
       Menú
     </button>
     <div class="catalog-meta">
+      <p><time data-hora-completa>23:46 ART 26 Agosto 2026</time></p>
       <p>
-        Buenos Aires, ARG <time data-reloj>23:46</time>
+        <button type="button" class="catalog-theme-toggle" data-estacion-tema aria-label="Cambiar estación">Invierno</button>
         <span class="catalog-theme-toggle-sep" aria-hidden="true">·</span>
         <button type="button" class="catalog-theme-toggle" data-theme-toggle aria-pressed="false">Noche</button>
       </p>
@@ -47,18 +48,24 @@
 
   <aside class="catalog-sidebar" id="catalog-sidebar" aria-label="Menú de navegación">
     <div class="catalog-sidebar-top">
-      <button type="button" class="catalog-theme-toggle" data-theme-toggle aria-pressed="false">Noche</button>
+      <p class="catalog-sidebar-mode">
+        <button type="button" class="catalog-theme-toggle" data-theme-toggle aria-pressed="false">Noche</button>
+        <span class="catalog-theme-toggle-sep" aria-hidden="true">/</span>
+        <button type="button" class="catalog-theme-toggle" data-estacion-tema aria-label="Cambiar estación">Invierno</button>
+        <time data-hora-completa>23:46 ART 26 Agosto 2026</time>
+      </p>
       <button type="button" class="catalog-sidebar-close" id="catalog-sidebar-close">Cerrar</button>
     </div>
     <p class="catalog-sidebar-label">(Navegación)</p>
     <nav class="catalog-sidebar-nav" aria-label="Principal">
       <a class="catalog-sidebar-link" href="index.html">Index</a>
-      <span class="catalog-sidebar-group-label">Terrarios</span>
-      <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=abierto">Abiertos</a>
-      <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=cerrado">Cerrados</a>
+      <button type="button" class="catalog-sidebar-group-label" id="sidebar-terrarios-toggle" aria-expanded="false" aria-controls="sidebar-terrarios-group">Terrarios</button>
+      <div class="catalog-sidebar-group" id="sidebar-terrarios-group" hidden>
+        <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=abierto">Abiertos</a>
+        <a class="catalog-sidebar-link catalog-sidebar-sublink" href="coleccion.html?tipo=cerrado">Cerrados</a>
+      </div>
       <a class="catalog-sidebar-link" href="riegos.html">Riegos</a>
     </nav>
-    <p class="catalog-sidebar-datetime">Buenos Aires, ARG <time data-reloj>23:46</time></p>
     <button type="button" class="catalog-sidebar-auth-btn" data-auth-nav>Iniciar sesión</button>
   </aside>
 

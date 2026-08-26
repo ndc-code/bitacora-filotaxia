@@ -10,7 +10,9 @@ import { wireAuthModal } from '../utils/auth-modal.js';
 import { wireAuthNav } from '../utils/auth-nav.js';
 import { wireReloj } from '../utils/reloj.js';
 import { wireThemeToggle } from '../utils/theme.js';
+import { wireSeasonTheme } from '../utils/catalog-season-theme.js';
 import { iniciarPagina, mostrarErrorDePagina } from '../utils/guard.js';
+import { wireSidebarAccordion } from '../utils/catalog-sidebar-accordion.js';
 
 const TIPO_TITULO = { abierto: 'Abiertos', cerrado: 'Cerrados' };
 const TIPO_TITULO_SPLIT = { abierto: 'Terrarios Abiertos', cerrado: 'Terrarios Cerrados' };
@@ -473,7 +475,9 @@ function abrirLogin() {
 function montarChrome() {
   wireReloj();
   wireThemeToggle();
+  wireSeasonTheme();
   wireSidebarToggle();
+  wireSidebarAccordion();
   wireHoverAislado(root);
   wireImagenPortada(root);
 }

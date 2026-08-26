@@ -6,7 +6,7 @@
   <title>Detalle de ítem — Filotaxia</title>
   <script>
     try {
-      if (localStorage.getItem('tema') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      var t = localStorage.getItem('tema'); if (t === 'dark' || t === 'dusk') document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
   </script>
   <link rel="stylesheet" href="css/styles.css" />

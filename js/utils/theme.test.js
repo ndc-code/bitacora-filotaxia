@@ -1,19 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { temaOpuesto, etiquetaParaTema, TEMA_CLARO, TEMA_OSCURO } from './theme.js';
+import { temaSiguiente, etiquetaParaTema, TEMA_DIA, TEMA_ATARDECER, TEMA_NOCHE } from './theme.js';
 
-test('temaOpuesto de claro es oscuro', () => {
-  assert.equal(temaOpuesto(TEMA_CLARO), TEMA_OSCURO);
+test('temaSiguiente de día es atardecer', () => {
+  assert.equal(temaSiguiente(TEMA_DIA), TEMA_ATARDECER);
 });
 
-test('temaOpuesto de oscuro es claro', () => {
-  assert.equal(temaOpuesto(TEMA_OSCURO), TEMA_CLARO);
+test('temaSiguiente de atardecer es noche', () => {
+  assert.equal(temaSiguiente(TEMA_ATARDECER), TEMA_NOCHE);
 });
 
-test('etiquetaParaTema invita a pasar a Noche estando en claro', () => {
-  assert.equal(etiquetaParaTema(TEMA_CLARO), 'Noche');
+test('temaSiguiente de noche vuelve a día (cierra el ciclo)', () => {
+  assert.equal(temaSiguiente(TEMA_NOCHE), TEMA_DIA);
 });
 
-test('etiquetaParaTema invita a pasar a Día estando en oscuro', () => {
-  assert.equal(etiquetaParaTema(TEMA_OSCURO), 'Día');
+test('etiquetaParaTema nombra el estado actual: Día', () => {
+  assert.equal(etiquetaParaTema(TEMA_DIA), 'Día');
+});
+
+test('etiquetaParaTema nombra el estado actual: Atardecer', () => {
+  assert.equal(etiquetaParaTema(TEMA_ATARDECER), 'Atardecer');
+});
+
+test('etiquetaParaTema nombra el estado actual: Noche', () => {
+  assert.equal(etiquetaParaTema(TEMA_NOCHE), 'Noche');
 });
