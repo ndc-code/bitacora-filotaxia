@@ -5,8 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Colección — Filotaxia</title>
   <script>
+    // Anti-flash: fija estación y momento del día ANTES del primer paint, con
+    // la hora de Buenos Aires. El JS (js/utils/reloj.js) los mantiene al día
+    // después. Estaciones por mes (hemisferio sur); cortes horarios fijos:
+    // Día 06-18, Noche 18-06.
     try {
-      var t = localStorage.getItem('tema'); if (t === 'dark' || t === 'dusk') document.documentElement.setAttribute('data-theme', t);
+      var zona = 'America/Argentina/Buenos_Aires';
+      var partes = new Intl.DateTimeFormat('en-US', {
+        timeZone: zona, month: 'numeric', hour: '2-digit', hour12: false,
+      }).formatToParts(new Date()).reduce(function (acc, p) {
+        acc[p.type] = p.value; return acc;
+      }, {});
+      var mes = Number(partes.month);
+      var hora = Number(partes.hour) % 24;
+      var estaciones = [
+        'verano', 'verano', 'otono', 'otono', 'otono', 'invierno',
+        'invierno', 'invierno', 'invierno', 'primavera', 'primavera', 'verano',
+      ];
+      document.documentElement.setAttribute('data-season', estaciones[mes - 1]);
+      var tema = hora >= 6 && hora < 18 ? 'light' : 'dark';
+      if (tema !== 'light') document.documentElement.setAttribute('data-theme', tema);
     } catch (e) {}
   </script>
   <link rel="stylesheet" href="css/styles.css" />
@@ -36,11 +54,11 @@
       Menú
     </button>
     <div class="catalog-meta">
-      <p><time data-hora-completa>23:46 ART 26 Agosto 2026</time></p>
+      <p><time data-hora-completa>00:00 AR 01 ENE 2026</time></p>
       <p>
-        <button type="button" class="catalog-theme-toggle" data-estacion-tema aria-label="Cambiar estación">Invierno</button>
+        <span class="catalog-theme-label" data-estacion-tema>Invierno</span>
         <span class="catalog-theme-toggle-sep" aria-hidden="true">·</span>
-        <button type="button" class="catalog-theme-toggle" data-theme-toggle aria-pressed="false">Noche</button>
+        <span class="catalog-theme-label" data-theme-toggle>Noche</span>
       </p>
       <button type="button" class="catalog-auth-btn" data-auth-nav>Iniciar sesión</button>
     </div>
@@ -49,10 +67,10 @@
   <aside class="catalog-sidebar" id="catalog-sidebar" aria-label="Menú de navegación">
     <div class="catalog-sidebar-top">
       <p class="catalog-sidebar-mode">
-        <button type="button" class="catalog-theme-toggle" data-theme-toggle aria-pressed="false">Noche</button>
+        <span class="catalog-theme-label" data-theme-toggle>Noche</span>
         <span class="catalog-theme-toggle-sep" aria-hidden="true">/</span>
-        <button type="button" class="catalog-theme-toggle" data-estacion-tema aria-label="Cambiar estación">Invierno</button>
-        <time data-hora-completa>23:46 ART 26 Agosto 2026</time>
+        <span class="catalog-theme-label" data-estacion-tema>Invierno</span>
+        <time data-hora-completa>00:00 AR 01 ENE 2026</time>
       </p>
       <button type="button" class="catalog-sidebar-close" id="catalog-sidebar-close">Cerrar</button>
     </div>

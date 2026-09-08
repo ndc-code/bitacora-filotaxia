@@ -1,73 +1,59 @@
 import { qsa } from './dom.js';
 
-const CLAVE_STORAGE = 'tema';
 export const TEMA_DIA = 'light';
-export const TEMA_ATARDECER = 'dusk';
 export const TEMA_NOCHE = 'dark';
 
-const ORDEN = [TEMA_DIA, TEMA_ATARDECER, TEMA_NOCHE];
+// El cartel dice "Buenos Aires, ARG": el momento del día se calcula siempre
+// sobre la hora de esa ciudad, no la local del dispositivo.
+const ZONA = 'America/Argentina/Buenos_Aires';
 
-export function temaSiguiente(tema) {
-  const i = ORDEN.indexOf(tema);
-  return ORDEN[(i + 1) % ORDEN.length] ?? TEMA_DIA;
-}
+const formatoHoraZona = new Intl.DateTimeFormat('en-US', {
+  timeZone: ZONA,
+  hour: '2-digit',
+  hour12: false,
+});
 
-// El botón nombra el estado actual, no la acción.
+// El texto nombra el estado actual, no una acción.
 export function etiquetaParaTema(tema) {
   if (tema === TEMA_NOCHE) return 'Noche';
-  if (tema === TEMA_ATARDECER) return 'Atardecer';
   return 'Día';
 }
 
-function guardarTema(tema) {
-  try {
-    localStorage.setItem(CLAVE_STORAGE, tema);
-  } catch {
-    // Navegación privada o storage lleno: el toggle sigue funcionando en la
-    // sesión actual, solo no persiste entre recargas.
-  }
-}
-
-function pintarBotones(botones, tema) {
-  botones.forEach((boton) => {
-    boton.textContent = etiquetaParaTema(tema);
-    boton.setAttribute('aria-pressed', String(tema !== TEMA_DIA));
-  });
+/**
+ * Momento del día según la hora de Buenos Aires, con corte fijo (no salida ni
+ * puesta de sol reales): Día 06–18, Noche 18–06.
+ */
+export function momentoActual(date = new Date()) {
+  // `hour: '2-digit'` con `hour12: false` puede devolver "24" a medianoche
+  // en algunos motores; el `% 24` lo normaliza a 0.
+  const hora = Number(formatoHoraZona.format(date)) % 24;
+  return hora >= 6 && hora < 18 ? TEMA_DIA : TEMA_NOCHE;
 }
 
 /**
- * Sincroniza los botones `[data-theme-toggle]` de la página con el
- * `data-theme` ya aplicado en `<html>` (lo pone el script inline anti-flash
- * del `<head>`) y los conecta para ciclarlo Día -> Atardecer -> Noche -> ...
- * Devuelve una función para desconectarlos.
+ * Fija el `data-theme` de `<html>` al momento del día real y refleja su
+ * nombre en los `[data-theme-toggle]`. El reloj (js/utils/reloj.js) la llama
+ * en cada tick de minuto, así el tema cambia solo al cruzar un corte horario
+ * con la página abierta.
+ */
+export function aplicarMomentoTema(date = new Date()) {
+  const raiz = document.documentElement;
+  const tema = momentoActual(date);
+  if (tema === TEMA_DIA) {
+    raiz.removeAttribute('data-theme');
+  } else {
+    raiz.setAttribute('data-theme', tema);
+  }
+  qsa('[data-theme-toggle]').forEach((el) => {
+    el.textContent = etiquetaParaTema(tema);
+  });
+  return tema;
+}
+
+/**
+ * Aplica el momento del día una vez al cargar la página. Ya no hay ciclado
+ * manual: el usuario no elige el tema, lo marca el reloj.
  */
 export function wireThemeToggle() {
-  const botones = qsa('[data-theme-toggle]');
-  if (botones.length === 0) return () => {};
-
-  const raiz = document.documentElement;
-
-  function temaActual() {
-    const valor = raiz.getAttribute('data-theme');
-    return ORDEN.includes(valor) ? valor : TEMA_DIA;
-  }
-
-  pintarBotones(botones, temaActual());
-
-  function onClick() {
-    const siguiente = temaSiguiente(temaActual());
-    if (siguiente === TEMA_DIA) {
-      raiz.removeAttribute('data-theme');
-    } else {
-      raiz.setAttribute('data-theme', siguiente);
-    }
-    guardarTema(siguiente);
-    pintarBotones(botones, siguiente);
-  }
-
-  botones.forEach((boton) => boton.addEventListener('click', onClick));
-
-  return () => {
-    botones.forEach((boton) => boton.removeEventListener('click', onClick));
-  };
+  aplicarMomentoTema();
 }

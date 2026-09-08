@@ -28,12 +28,12 @@
 }
 
 /*
- * Día -> Atardecer -> Noche (ciclado por wireThemeToggle en
- * js/utils/theme.js; `<html data-theme>` lo pone el script inline del
- * `<head>` de cada página antes del primer paint). Sin estación elegida (o
- * después de "Reset" en el ciclo de estaciones): Día y Atardecer se ven
- * igual (blanco de fondo, negro de texto, los mismos de `:root`) y Noche los
- * invierte del todo (negro de fondo, blanco de texto).
+ * Momento del día (`data-theme`): Día / Noche. Lo fija el JS a la hora real de
+ * Buenos Aires con un corte horario (Día 06-18, Noche 18-06 — ver
+ * js/utils/theme.js -> momentoActual); el script inline del `<head>` lo pone
+ * antes del primer paint y el usuario no lo elige. Sin estación (caso que ya
+ * no se da: `data-season` está siempre) Día se ve como `:root` y Noche
+ * invierte fondo y texto.
  */
 :root[data-theme='dark'] {
   --color-ink: #ffffff;
@@ -45,44 +45,47 @@
 }
 
 /*
- * Tema por estación (inspirado en bergerfohr.com): tocar la estación en el
- * sidebar la va ciclando (Invierno -> Primavera -> Verano -> Otoño -> ...) y
- * tiñe el sitio con su color, distinto según el momento del día:
+ * Tema por estación (inspirado en bergerfohr.com). `data-season` lo fija el
+ * JS a la estación real de Buenos Aires por mes de calendario (ver
+ * js/utils/reloj.js -> estacionActualTema y catalog-season-theme.js); el
+ * usuario no lo elige. Está siempre presente, y tiñe el sitio con el color de
+ * la estación según el momento del día (`data-theme`, también automático):
  * - Día: fondo blanco, todo lo demás del color de la estación.
- * - Atardecer: fondo del color de la estación, todo lo demás blanco.
  * - Noche: fondo negro, todo lo demás del color de la estación.
- * Sin elegir ninguna todavía, el sitio queda en blanco/negro de siempre (ver
- * wireSeasonTheme).
  */
 :root[data-season='invierno'] {
   --color-estacion: #3c6ef6;
 }
 
 :root[data-season='primavera'] {
-  --color-estacion: #21c55e;
+  --color-estacion: #52ea90;
 }
 
 :root[data-season='verano'] {
-  --color-estacion: #facc14;
+  --color-estacion: #fdf251;
 }
 
 :root[data-season='otono'] {
   --color-estacion: #e8412e;
 }
 
-:root[data-season]:not([data-theme='dusk']):not([data-theme='dark']) {
+:root[data-season]:not([data-theme='dark']) {
   --color-ink: var(--color-estacion);
   --color-canvas: #ffffff;
-}
-
-:root[data-theme='dusk'][data-season] {
-  --color-ink: #ffffff;
-  --color-canvas: var(--color-estacion);
 }
 
 :root[data-theme='dark'][data-season] {
   --color-ink: var(--color-estacion);
   --color-canvas: #000000;
+}
+
+/*
+ * El amarillo de Verano es muy claro: de día (amarillo sobre blanco) casi no
+ * se lee. Ahí el texto queda en negro en vez del amarillo que usan las
+ * demás estaciones.
+ */
+:root[data-season='verano']:not([data-theme='dark']) {
+  --color-ink: #000000;
 }
 
 * {
@@ -482,7 +485,7 @@ select.input {
 }
 
 .catalog-nav-sublink {
-  color: #000;
+  color: var(--color-ink);
   text-decoration: none;
   font-size: 14px;
 }
@@ -579,21 +582,13 @@ select.input {
   margin-top: -4px;
 }
 
-.catalog-theme-toggle {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font-family: inherit;
-  font-size: inherit;
+/*
+ * Estación y momento del día: texto fijo, no interactivo. Los pinta el reloj
+ * (js/utils/reloj.js -> aplicarEstacionTema / aplicarMomentoTema) según la
+ * fecha y hora reales de Buenos Aires; el usuario no los elige.
+ */
+.catalog-theme-label {
   line-height: 1;
-  cursor: pointer;
-}
-
-.catalog-theme-toggle:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .catalog-theme-toggle-sep {
@@ -626,6 +621,12 @@ select.input {
 
 .catalog-view-sep {
   opacity: 0.45;
+}
+
+/* Solo se ve en el modal de mobile/tablet: en desktop "Noche"/la estación ya
+   están en el header, no hace falta repetirlos acá. */
+.catalog-filters-mode {
+  display: none;
 }
 
 .catalog-filters-footer {
@@ -2048,6 +2049,14 @@ select.input {
     column-gap: 16px;
   }
 
+  .catalog-filters-mode {
+    grid-column: 1;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: 13px;
+  }
+
   .catalog-filters-footer {
     grid-column: 1;
     display: flex;
@@ -2083,7 +2092,8 @@ select.input {
 }
 
 @media (max-width: 420px) {
-  .catalog-filter-option {
+  .catalog-filter-option,
+  .catalog-filters-mode {
     gap: 4px;
     font-size: 11px;
   }
